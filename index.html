@@ -26,6 +26,7 @@
   --bad:#c9302c; --bad-soft:#fbe8e7;
   --warn:#d06d10; --warn-soft:#fdf0e1;
   --purple:#7a3fc4; --key:#2a3341;
+  --pass:#5b6b8c; --pass-soft:#e7ecf5;
   --gold:#a56600; --gold-2:#b4500f;
   --ui:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
   --num:"Barlow Semi Condensed","Barlow",system-ui,-apple-system,sans-serif;
@@ -35,14 +36,16 @@
   --fg:#e8edf4; --muted:#9aa6b6; --shadow:rgba(0,0,0,.45);
   --accent:#6f9dff; --accent-soft:#1b2a45; --good:#3fb96c; --good-soft:#15301f;
   --bad:#e9554e; --bad-soft:#3a1a19; --warn:#e48d33; --warn-soft:#3a2813;
-  --purple:#b892ff; --key:#35404f; color-scheme:dark;
+  --purple:#b892ff; --key:#35404f;
+  --pass:#8b9cc2; --pass-soft:#232c3a; color-scheme:dark;
 }}
 :root[data-theme="dark"]{
   --bg:#0f141b; --surface:#171e28; --surface-2:#1e2632; --line:#2c3644;
   --fg:#e8edf4; --muted:#9aa6b6; --shadow:rgba(0,0,0,.45);
   --accent:#6f9dff; --accent-soft:#1b2a45; --good:#3fb96c; --good-soft:#15301f;
   --bad:#e9554e; --bad-soft:#3a1a19; --warn:#e48d33; --warn-soft:#3a2813;
-  --purple:#b892ff; --key:#35404f; color-scheme:dark;
+  --purple:#b892ff; --key:#35404f;
+  --pass:#8b9cc2; --pass-soft:#232c3a; color-scheme:dark;
 }
 *{box-sizing:border-box}
 html{padding-top:env(safe-area-inset-top,0px);color-scheme:light}
@@ -140,6 +143,82 @@ h1 span{color:var(--muted);font-weight:600}
 .pass{background:var(--bad)}
 .ok{background:var(--good)}
 .ok:disabled{background:var(--surface-2);color:var(--muted);border:1px solid var(--line)}
+/* « Passer à <joueur> » : vert réservé aux points, donc gris ardoise/bleu acier. */
+.act.slate{background:var(--pass);box-shadow:0 2px 0 var(--shadow)}
+.act.slate:active:not(:disabled){transform:scale(.98)}
+.act.purple{background:var(--purple);box-shadow:0 2px 0 var(--shadow)}
+.act.purple:active:not(:disabled){transform:scale(.98)}
+.act.purple:disabled{background:var(--surface-2);color:var(--muted);border:1px solid var(--line)}
+
+/* ---- Mode dés ---- */
+.modes{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px}
+.mode{height:46px;border-radius:12px;border:1px solid var(--line);background:var(--surface-2);color:var(--fg);font-weight:700;font-size:15px}
+.mode[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-strong)}
+.dice-wrap{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:flex-end;margin-bottom:10px}
+.reroll{height:46px;padding:0 16px;border-radius:12px;border:0;background:var(--warn);color:var(--on-strong);font-weight:700;font-size:16px;flex:none;box-shadow:0 2px 0 var(--shadow);transition:transform .08s}
+.reroll:active:not(:disabled){transform:scale(.95)}
+.reroll:disabled{background:var(--surface-2);color:var(--muted);border:1px solid var(--line)}
+.reroll.vol{background:var(--purple)}
+.topctr{display:flex;align-items:center;gap:8px;flex:none}
+.diceleft{height:46px;padding:0 12px;border-radius:12px;background:var(--accent-soft);border:1.5px solid var(--accent);color:var(--accent);
+  font-weight:700;font-size:15px;font-variant-numeric:tabular-nums;display:inline-flex;align-items:center;white-space:nowrap}
+.dstate{font-size:13px;color:var(--muted);line-height:1.4}
+.dstate b{color:var(--fg)}
+.dturn{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.dturn .dlab{font:700 12px var(--ui);letter-spacing:.06em;color:var(--muted);text-transform:uppercase}
+.dturn .damt{font:700 30px var(--num);font-variant-numeric:tabular-nums;color:var(--accent)}
+.dturn .dgain{font:700 15px var(--num);color:var(--good);font-variant-numeric:tabular-nums}
+.dboard{display:grid;grid-template-columns:repeat(6,1fr);gap:7px;margin-bottom:10px}
+.die{position:relative;aspect-ratio:1;border-radius:11px;background:var(--on-strong);color:var(--fg);
+  border:1.5px solid var(--line);box-shadow:0 2px 0 var(--shadow);
+  transition:transform .12s,box-shadow .12s;min-width:44px;min-height:44px}
+.die:not(.gray):not(.dead){border-color:var(--line)}
+.die.kept{background:var(--surface);
+  border-color:var(--pip,var(--accent));
+  border-color:color-mix(in srgb,var(--pip,var(--accent)) 42%,var(--line))}
+.die.gray,.die.dead{background:var(--surface-2);color:var(--muted);opacity:.85;border-style:dashed;border-color:var(--line)}
+.die .face{position:absolute;inset:10%;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);gap:9%}
+.die .pip{border-radius:50%;background:var(--pip,var(--accent));justify-self:center;align-self:center;width:96%;aspect-ratio:1}
+.die .pip.off{background:transparent}
+.die.gray .pip:not(.off),.die.dead .pip:not(.off){background:var(--muted)}
+.die.rollin{overflow:hidden}
+.dhint{font-size:12px;color:var(--muted);margin:0 0 8px;line-height:1.35}
+.drow-lost .num b{color:var(--bad)}
+.dmsgs{margin-bottom:8px}
+.dmsg{border-radius:10px;padding:9px 11px;border:1.5px solid;font-size:13px;line-height:1.35;margin-bottom:6px}
+.dmsg.bad{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
+.dmsg.warn{background:var(--warn-soft);border-color:var(--warn);color:var(--warn)}
+.dmsg.good{background:var(--good-soft);border-color:var(--good);color:var(--good)}
+.dsub{font-size:13px;color:var(--muted);margin:0 0 8px;line-height:1.45}
+.dsub b{color:var(--fg)}
+.dgrid{display:block;margin-bottom:6px}
+.dgrid .die{min-width:44px;min-height:44px}
+.dgrid small{display:block;font:700 12px var(--num);color:var(--muted);letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px}
+.dgrid .dgroup{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px}
+.dgrid .div{display:flex;gap:7px;flex-wrap:wrap;justify-content:center}
+.dgrid .div .die{flex:1 1 24%;min-width:52px;max-width:60px}
+.des-log{margin-top:6px}
+.des-log summary{font-weight:600;font-size:14px;cursor:pointer;color:var(--accent);padding:4px 0}
+.dlogrow{display:grid;grid-template-columns:2em 1fr auto 4.2em;gap:8px;align-items:baseline;padding:6px 0;border-bottom:1px solid var(--line);font-size:14px}
+.dlogrow .ln{font:600 12px var(--num);color:var(--muted)}
+.dlogrow .lnm{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dlogrow .lv{text-align:right;font-weight:600;color:var(--good);white-space:nowrap}
+.dlogrow .lv.vol{color:var(--purple)}
+.dlogrow .lv.none{color:var(--muted);font-weight:500}
+.dlogrow .ls{text-align:right;font:700 15px var(--num);font-variant-numeric:tabular-nums}
+.dloghead{font-size:12px;color:var(--muted);margin:4px 0 8px;letter-spacing:.02em}
+.djetrow{display:grid;grid-template-columns:3.2em minmax(0,1fr) auto auto 3.4em;gap:8px;align-items:baseline;padding:7px 0;border-bottom:1px solid var(--line);font-size:14px}
+.djetrow .ln{font:600 12px var(--num);color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+.djetrow .lnm{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.djetrow .ddice-mini{font:700 15px var(--num);letter-spacing:.06em;color:var(--fg);white-space:nowrap}
+.djetrow .lv{text-align:right;font-weight:600;color:var(--good);white-space:nowrap}
+.djetrow .lv.vol{color:var(--purple)}
+.djetrow .lv.none{color:var(--bad);font-weight:600}
+.djetrow .lv.lv{color:var(--fg)}
+.djetrow .ls{text-align:right;font:700 15px var(--num);font-variant-numeric:tabular-nums;color:var(--accent)}
+.dvn{display:flex;align-items:baseline;gap:6px}
+.dvn b{font:700 18px var(--num);color:var(--accent)}
+.dvn span{font-size:13px;color:var(--muted)}
 
 /* Setup */
 .setup{margin:auto;width:100%;max-width:420px;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:24px;
@@ -154,6 +233,37 @@ h1 span{color:var(--muted);font-weight:600}
 .version{margin:-8px 0 0;text-align:center;font-size:12px;letter-spacing:.06em;color:var(--muted);font-variant-numeric:tabular-nums}
 .go{height:56px;border-radius:14px;border:0;background:var(--good);color:var(--on-strong);font-weight:700;font-size:18px}
 .go.danger{background:var(--bad)}
+.go:disabled{background:var(--surface-2);color:var(--muted);border:1px solid var(--line);cursor:not-allowed}
+.setup h2 .cnt{display:inline-block;min-width:22px;text-align:center;background:var(--accent);color:var(--on-strong);
+  border-radius:10px;padding:1px 7px;font:700 12px var(--num);vertical-align:middle}
+.pchips{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.pchip{display:flex;align-items:center;gap:8px;text-align:left;border:1.5px solid var(--line);background:var(--surface-2);
+  border-radius:12px;padding:8px 10px;color:var(--fg);font-weight:600;font-size:14px;min-width:0}
+.pchip.on{background:var(--accent-soft);border-color:var(--accent)}
+.pchip .pnm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pchip .pstat{font:600 11px var(--num);color:var(--muted);white-space:nowrap}
+.pchip.on .pstat{color:var(--accent)}
+.avat{width:30px;height:30px;border-radius:50%;color:#fff;display:inline-flex;align-items:center;justify-content:center;
+  font:700 15px var(--num);flex:none;box-shadow:inset 0 -2px 0 rgba(0,0,0,.18)}
+.linkbtn{background:none;border:0;color:var(--accent);font-weight:600;font-size:14px;padding:6px 0;text-decoration:underline;cursor:pointer}
+.roster-empty{display:flex;flex-direction:column;gap:10px;align-items:flex-start;color:var(--muted);font-size:14px}
+.prow{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;margin-bottom:8px}
+.prow .pinfo{flex:1;min-width:0}
+.prow .pinfo b{display:block;font-size:15px}
+.prow .pinfo small{color:var(--muted);font-size:12px}
+.prow .pops{display:flex;gap:6px;align-items:center}
+.prow .trophy{font-size:15px}
+.mini{width:30px;height:30px;border-radius:9px;border:1px solid var(--line);background:var(--surface-2);color:var(--fg);
+  font-weight:700;font-size:14px;display:inline-flex;align-items:center;justify-content:center}
+.mini.danger{color:var(--bad)}
+.plist{margin:4px 0}
+.peditor{border:1px dashed var(--accent);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:12px;background:var(--accent-soft)}
+.peditor input{height:44px;border-radius:10px;border:1.5px solid var(--line);background:var(--surface);color:var(--fg);
+  font-size:16px;padding:0 12px;width:100%}
+.pcolors{display:flex;flex-wrap:wrap;gap:8px}
+.sw{width:30px;height:30px;border-radius:50%;cursor:pointer;flex:none}
+.sw.on{outline:3px solid var(--fg);outline-offset:2px}
+.pbtns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .resume{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--accent-soft);
   border:1.5px solid var(--accent);border-radius:14px;padding:12px 14px;color:var(--fg);
   transition:transform .08s}
@@ -162,6 +272,18 @@ h1 span{color:var(--muted);font-weight:600}
 .resume b{display:block;font-size:15px;color:var(--accent)}
 .resume small{display:block;margin-top:2px;font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .resume svg{flex:none;width:18px;height:18px;color:var(--accent)}
+.resume.des{background:var(--good-soft);border-color:var(--good)}
+.resume.des b{color:var(--good)}
+.resume.des svg{color:var(--good)}
+.resume .rt2{flex:none;font-size:20px}
+.past{margin-top:2px}
+.past h2{font-size:15px;margin:0 0 10px;font-weight:600}
+.pastrow{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px;color:var(--fg);margin-bottom:8px;transition:transform .08s}
+.pastrow:active{transform:scale(.985)}
+.pastrow .rt{flex:1;min-width:0}
+.pastrow b{display:block;font-size:15px;color:var(--good)}
+.pastrow small{display:block;margin-top:2px;font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pastrow svg{flex:none;width:18px;height:18px;color:var(--muted)}
 
 /* Journal des tours */
 .sheet{position:fixed;inset:0;z-index:20;background:var(--bg);display:flex;flex-direction:column;overscroll-behavior:contain}
@@ -264,6 +386,23 @@ h1 span{color:var(--muted);font-weight:600}
     if (canVol(s)) return 'Voler le dernier score';
     if (s.prevTurn && s.prevTurn.points > 0 && !volFits(s)) return 'Pas assez de points restants pour ce vol';
     return 'Aucun score à voler';
+  }
+
+  // État destiné au réseau (snapshot diffusé) : aucun historique d'annulation.
+  // On garde names, log et le dernier état, jamais past/future, pour que chaque
+  // appareil voit exactement la même partie sans l'encombrer des états internes.
+  function serializePublic(s) {
+    return {
+      names: s.names.slice(),
+      players: s.players.map(function (p) {
+        return { score: p.score, last: p.last, started: p.started };
+      }),
+      current: s.current,
+      prevTurn: s.prevTurn ? { player: s.prevTurn.player, points: s.prevTurn.points } : null,
+      winner: s.winner,
+      turn: { stolen: s.turn.stolen, add: s.turn.add },
+      log: s.log.map(function (e) { return Object.assign({}, e); })
+    };
   }
 
   // ---- Copies -------------------------------------------------------------
@@ -429,10 +568,311 @@ h1 span{color:var(--muted);font-weight:600}
     STEPS: STEPS, HISTORY_MAX: HISTORY_MAX,
     fmt: fmt, freshTurn: freshTurn,
     createGame: createGame, reduce: reduce, normalize: normalize,
+    serializePublic: serializePublic,
     canVol: canVol, volFits: volFits, volReason: volReason
   };
 });
 
+</script>
+<script>
+/* 20K — moteur des DÉS (6 dés).
+ *
+ * Pur : aucune dépendance au DOM, au stockage, au son ou au réseau.
+ * Règles issues de SPEC-des.md (dictées par l'auteur, verrouillées 2026-11-21).
+ *
+ * La règle la plus importante : les combinaisons ne se forment que DANS UN MÊME
+ * lancer. Les dés gardés d'un lancer antérieur gardent leur valeur unitaire,
+ * ils ne se recombinent jamais avec les nouveaux. Le tour cumule les scores
+ * de chaque lancer (l'addition est faite par l'appelant, pas ici).
+ *
+ * Ici on évalue UN seul lancer de dés -> le meilleur score unique.
+ */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory();
+  else root.DiceEngine = factory();
+})(typeof globalThis !== 'undefined' ? globalThis : this, function () {
+  'use strict';
+
+  var UNIT_1 = 100;   // chaque 1 = 100
+  var UNIT_5 = 50;    // chaque 5 = 50
+
+  var SUITE = 1500;        // 1-2-3-4-5-6 en un seul lancer
+  var TROIS_PAIRES = 1000; // 3 paires différentes en un seul lancer
+
+  // Score minimal pour qu'un vol "compte" (dés restants du joueur précédent).
+  var VOL_MIN = 50;
+  // Seuil à partir duquel on POSSÈDE le droit de voler.
+  var VOL_PASSEPORT = 3500;
+
+  function sameVals(a, b) { return a.every(function (x, i) { return x === b[i]; }); }
+  function sorted(v) { return v.slice().sort(function (a, b) { return a - b; }); }
+
+  // Validation : exactement des valeurs de dé 1..6.
+  function isRoll(v) {
+    return Array.isArray(v) && v.length > 0 &&
+      v.every(function (x) { return Number.isInteger(x) && x >= 1 && x <= 6; });
+  }
+
+  // ---- Combinaisons (évaluées sur un seul lancer) -------------------------
+
+  // Suite 1-2-3-4-5-6 ?
+  function suite(dice) {
+    if (dice.length !== 6) return null;
+    var s = sorted(dice);
+    return sameVals(s, [1, 2, 3, 4, 5, 6]) ? { points: SUITE, name: 'suite', dice: dice.slice() } : null;
+  }
+
+  // 3 paires de chiffres DIFFÉRENTS ? (1,1,5,5,6,6) ; un même nombre en 4+ n'est pas une paire.
+  function troisPaires(dice) {
+    if (dice.length !== 6) return null;
+    var counts = {};
+    dice.forEach(function (d) { counts[d] = (counts[d] || 0) + 1; });
+    var pairs = Object.keys(counts).filter(function (k) { return counts[k] === 2; });
+    if (pairs.length === 3) return { points: TROIS_PAIRES, name: 'troisPaires', dice: dice.slice() };
+    return null;
+  }
+
+  // N dés identiques (N>=3). Si N<3, ne compte pas comme combinaison (juste unités).
+  function groupement(dice) {
+    // trouve la face ayant le plus grand nombre de dés identiques >= 3
+    var counts = {};
+    dice.forEach(function (d) { counts[d] = (counts[d] || 0) + 1; });
+    var best = null, bestN = 0;
+    Object.keys(counts).forEach(function (k) {
+      var n = counts[k];
+      if (n >= 3 && n > bestN) { best = Number(k); bestN = n; }
+    });
+    if (!best) return null;
+    // base du brelan: x → x*100 ; si la face est 1 → 1000.
+    var base = best === 1 ? 1000 : best * 100;
+    // chaque dé supplémentaire (au-delà de 3) double le total.
+    var points = base;
+    for (var i = 3; i < bestN; i++) points *= 2;
+    return { face: best, count: bestN, base: base, points: points, name: 'brelan' };
+  }
+
+  // ---- Évaluation d'UN lancer ----------------------------------------------
+  // Retourne le MEILLEUR score et la combinaison retenue, ou null si aucun point.
+  function scoreDice(values) {
+    if (!isRoll(values)) return { error: 'roll invalide' };
+    var dice = values.slice();
+
+    var s = suite(dice);
+    if (s) return s;                          // la suite consomme tout
+
+    var tp = troisPaires(dice);
+    if (tp) return tp;                        // 3 paires consomme tout
+
+    var g = groupement(dice);
+    if (g) {
+      // On a un brelan/plus. Les unités libres (1/5 PAS dans le brelan) s'ajoutent.
+      var toRemove = {};
+      var remaining = dice.slice();
+      // retire les g.count dés de la face g.face
+      var removed = 0;
+      var kept = [];
+      remaining.forEach(function (d) {
+        if (d !== g.face) kept.push(d);
+        else if (removed >= g.count) kept.push(d);
+        else removed++;
+      });
+      // les 1 et 5 restants (hors brelan) s'ajoutent comme unités libres.
+      var units = 0;
+      kept.forEach(function (d) { units += (d === 1 ? UNIT_1 : d === 5 ? UNIT_5 : 0); });
+      g.points += units;
+      g.name = g.count >= 4 ? 'brelan+' : 'brelan';
+      g.unitsAdded = units;
+      return g;
+    }
+
+    // Sinon, pas de combinaison : seulement les unités 1 et 5.
+    var p = 0;
+    var n1 = 0, n5 = 0;
+    dice.forEach(function (d) {
+      if (d === 1) { p += UNIT_1; n1++; }
+      else if (d === 5) { p += UNIT_5; n5++; }
+    });
+    if (p === 0) return { points: 0, name: 'rien', dice: dice.slice() };
+    return { points: p, name: 'unites', n1: n1, n5: n5, dice: dice.slice() };
+  }
+
+  // Score minimal d'un vol ("dés restants"). True si >= VOL_MIN.
+  function compteDansVol(lancer) {
+    var r = scoreDice(lancer);
+    return r && !r.error && r.points >= VOL_MIN;
+  }
+
+  return {
+    UNIT_1: UNIT_1, UNIT_5: UNIT_5, SUITE: SUITE, TROIS_PAIRES: TROIS_PAIRES,
+    VOL_MIN: VOL_MIN, VOL_PASSEPORT: VOL_PASSEPORT,
+    scoreDice: scoreDice, compteDansVol: compteDansVol
+  };
+});
+</script>
+<script>
+/* 20K — logique du TOUR aux dés (par-dessus engine-dice).
+ *
+ * Pur : aucune dépendance au DOM, au stockage, au son ou au réseau.
+ *
+ * Un tour est une suite de lancers sur 6 dés :
+ *   - on lance des dés, on évalue le lancer (engine-dice.scoreDice),
+ *   - on GARDE les dés qui rapportent (1, 5, ou les dés d'une combinaison),
+ *   - les dés inutiles sont relancés (on ne garde JAMAIS un dé qui ne rapporte rien),
+ *   - tant que le tour n'a pas accumulé 1000 on ne peut PAS s'arrêter,
+ *   - un lancer sans aucun point = perte totale de ce qui était accumulé.
+ *
+ * États d'un tour :
+ *   { type:'rolling', inHand:[...], kept:[...], score, canStop, lancers }
+ *   { type:'banked', total, lancers }
+ *   { type:'perdu', total:0, lancers }          // jet sans point
+ *   { type:'blocked' }                          // stop non autorisé (< 1000)
+ *
+ * Le moteur est DÉTERMINISTE : on passe les "dés" en paramètre (pour les tests)
+ * ou on les fait générer (rollN). Une fonction pure `resolve(nextHand)` N'avance
+ * le tour qu'en fonction de l'état ET du prochain lancer fourni.
+ */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory(root);
+  else root.TurnDice = factory(root);
+})(typeof globalThis !== 'undefined' ? globalThis : this, function (root) {
+  'use strict';
+  var D = (typeof require !== 'undefined') ? require('./engine-dice.js') : root.DiceEngine;
+
+  var OUVRAGE = 1000;
+  var DES = 6;
+  var VOL_PASSEPORT = D.VOL_PASSEPORT || 3500; // seuil pour avoir droit au vol
+
+  // ---- Helpers ------------------------------------------------------------
+  function rollN(n, nextInt) {
+    var rnd = nextInt || function () { return 1 + Math.floor(Math.random() * 6); };
+    var out = [];
+    for (var i = 0; i < n; i++) out.push(rnd());
+    return out;
+  }
+
+  // Quels dés sont "actifs" (à garder) pour ce lancer ?
+  // Retourne la liste des valeurs à garder (celles qui rapportent).
+  function activeToKeep(hand, res) {
+    if (res.name === 'suite') return hand.slice();
+    if (res.name === 'troisPaires') return hand.slice();
+    if (res.name === 'brelan' || res.name === 'brelan+') {
+      // garde les dés de la face majoritaire (3+) + les 1/5 libres
+      var counts = {};
+      hand.forEach(function (d) { counts[d] = (counts[d] || 0) + 1; });
+      var bigFace = null, bigN = 0;
+      Object.keys(counts).forEach(function (k) {
+        if (counts[k] >= 3 && counts[k] > bigN) { bigFace = Number(k); bigN = counts[k]; }
+      });
+      if (bigFace === null) return hand.filter(function (d) { return d === 1 || d === 5; });
+      return hand.filter(function (d) { return d === bigFace || d === 1 || d === 5; });
+    }
+    // unités uniquement
+    return hand.filter(function (d) { return d === 1 || d === 5; });
+  }
+
+  // ---- Création / transitions ---------------------------------------------
+  function fresh() { return { type: 'idle' }; }
+
+  // Démarre un tour avec le premier lancer (6 dés) fourni ou généré.
+  function start(state, firstHand) {
+    var s = state.type === 'idle' || state.type === 'banked' || state.type === 'perdu' || state.type === 'blocked'
+      ? { type: 'rolling', score: 0, kept: [], inHand: [], canStop: false, lancers: 0 }
+      : state;
+    var hand = firstHand || rollN(DES);
+    return applyRoll(s, hand);
+  }
+
+  // Relance : soumettre un nouveau lancer (les dés inutiles de l'état courant).
+  // En pur : l'appelant fournit `nextHand`, sinon généré.
+  function roll(state, nextHand) {
+    if (state.type !== 'rolling') return state;
+    var incomplets = state.inHand.filter(function (d) {
+      return state.kept.indexOf(d) === -1;   // les dés NON gardés deviennent la relance
+    });
+    var hand = nextHand || (incomplets.length > 0
+      ? rollN(incomplets.length)
+      : rollN(DES));   // si tout est gardé, on relance les 6
+    return applyRoll(state, hand);
+  }
+
+  // Applique un lancer `hand` à l'état courant (pur).
+  function applyRoll(state, hand) {
+    var res = D.scoreDice(hand);
+    var gained = res.points || 0;
+
+    // Lancer sans aucun point -> perte totale.
+    if (gained === 0) {
+      return { type: 'perdu', total: 0, lancers: (state.lancers || 0) + 1, handLost: hand, scoreAvant: state.score };
+    }
+
+    var score = state.score + gained;
+    var canStop = score >= OUVRAGE;
+    var kept = activeToKeep(hand, res);
+    var next = {
+      type: 'rolling',
+      inHand: hand,
+      kept: kept,
+      score: score,
+      canStop: canStop,
+      lancers: (state.lancers || 0) + 1,
+      gained: gained,
+      combinaison: res.name,
+      // dés restants à relancer (ceux qui ne rapportent rien)
+      toRoll: hand.filter(function (d) { return kept.indexOf(d) === -1; })
+    };
+    // Signal "tous les dés ont rapporté" (relance complète des 6).
+    next.allScored = kept.length === hand.length;
+    return next;
+  }
+
+  // Encaisser le tour (uniquement si >= 1000).
+  function stop(state) {
+    if (state.type !== 'rolling') return state;
+    if (!state.canStop) return { type: 'blocked', reason: 'il faut au moins ' + OUVRAGE + ' points pour s\'arrêter', score: state.score };
+    return { type: 'banked', total: state.score, lancers: state.lancers, kept: state.kept };
+  }
+
+  // Forcer la perte (utile pour l'UI "abandonner"). Retourne perdu.
+  function jeter(state) {
+    if (state.type !== 'rolling') return state;
+    return { type: 'perdu', total: 0, lancers: state.lancers, scoreAvant: state.score };
+  }
+
+  // Simule un tour COMPLET à partir d'une suite de lancers fournis (test).
+  // `suite` = [[6 dés], [dés relancés], ...] ; retourne l'état final.
+  function simulate(suite) {
+    if (!suite || suite.length === 0) return { type: 'perdu', total: 0, lancers: 0 };
+    var s = fresh();
+    s = start(s, suite[0]);
+    for (var i = 1; i < suite.length; i++) {
+      if (s.type === 'rolling') s = roll(s, suite[i]);
+      else break;
+    }
+    return s;
+  }
+
+  // ---- Vol -----------------------------------------------------------------
+  // Décide si le vol est possible (droit + place). Ne modifie aucun état : c'est
+  // un prédicat utilisé par l'UI pour montrer/permettre le bouton « voler ».
+  //   voleurScore   : total actuel du joueur qui veut voler
+  //   gainPrecedent : gain (dernier score) du joueur précédent à voler
+  //   production    : ce que le voleur compte encaisser ce tour (0 si pas encore)
+  //   TARGET        : 20000 (ou réglage)
+  function canVol(voleurScore, gainPrecedent, production, TARGET_) {
+    if (!gainPrecedent || gainPrecedent <= 0) return false;       // rien à voler
+    if (voleurScore < VOL_PASSEPORT) return false;                // pas 3 500+
+    TARGET_ = TARGET_ || 20000;
+    // place : volé + production + 50 marge <= TARGET
+    return voleurScore + gainPrecedent + production + 50 <= TARGET_;
+  }
+
+  return {
+    OUVRAGE: OUVRAGE, DES: DES,
+    fresh: fresh, start: start, roll: roll, stop: stop, jeter: jeter,
+    applyRoll: applyRoll, simulate: simulate, rollN: rollN, activeToKeep: activeToKeep,
+    canVol: canVol, VOL_PASSEPORT: VOL_PASSEPORT
+  };
+});
 </script>
 <script>
 /* 20K — interface (écran, son, voix, sauvegarde).
@@ -445,7 +885,65 @@ h1 span{color:var(--muted);font-weight:600}
   const fmt = E.fmt;
 
   const KEY = '20k-scorecard-v1';
-  const VERSION = '3.2';
+  const KEY_DES = '20k-scorecard-v1-des';
+  const VERSION = '3.73';
+
+  // dice-mode motors
+  const D = window.DiceEngine;
+  const T = window.TurnDice;
+  const DICE_GLYPH = ['', '⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
+  const DES_TARGET = 20000;
+  const DES_VOL_MIN_PROD = 50; // production minimale exigée pour encaisser un vol
+  // Couleur par VALEUR de dé : 6 = vert (bon), 1 = rouge (mauvais), dégradé entre deux.
+  const VALUE_COLORS = {
+    6: '#16833c',   // vert
+    5: '#4f9d33',   // vert-jaune
+    4: '#9aa91f',   // jaune verdâtre
+    3: '#c49a18',   // ambre/jaune
+    2: '#d06d10',   // orange
+    1: '#c9302c'    // rouge
+  };
+  const dieValueColor = v => VALUE_COLORS[v] || '#5d6878';
+
+  // Couleur distincte par jet de dés gardé (utilisée dans l'export / log).
+  const JET_COLORS = [
+    '#1f5fd6', '#16833c', '#7a3fc4', '#d06d10', '#c9302c', '#0e7f96'
+  ];
+  const jetColor = n => JET_COLORS[((n || 1) - 1 + JET_COLORS.length) % JET_COLORS.length];
+
+  // Couleurs pastel pour les avatars / pastilles des joueurs du répertoire.
+  const PLAYER_COLORS = ['#1f5fd6', '#16833c', '#7a3fc4', '#d06d10', '#c9302c', '#0e7f96', '#9aa91f', '#b4500f'];
+
+  // ---- Répertoire de joueurs (profil persistant, utilisable sur plusieurs
+  // appareils à terme). Clé localStorage séparée de l'état de partie pour
+  // préparer une future synchronisation multi-device.
+  const KEY_PLAYERS = '20k-players';
+  let roster = { players: [], updatedAt: 0 };
+  function loadRoster() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(KEY_PLAYERS));
+      if (!raw || !Array.isArray(raw.players)) { roster = { players: [], updatedAt: 0 }; return; }
+      const players = raw.players
+        .filter(p => p && typeof p.name === 'string' && p.name.trim())
+        .map(p => ({
+          id: typeof p.id === 'string' ? p.id : uid(),
+          name: p.name.trim(),
+          color: typeof p.color === 'string' ? p.color : PLAYER_COLORS[Math.floor(Math.random() * PLAYER_COLORS.length)],
+          stats: p.stats && typeof p.stats === 'object'
+            ? { games: +p.stats.games || 0, wins: +p.stats.wins || 0, points: +p.stats.points || 0 }
+            : { games: 0, wins: 0, points: 0 }
+        }));
+      roster = { players, updatedAt: typeof raw.updatedAt === 'number' ? raw.updatedAt : Date.now() };
+    } catch (e) { roster = { players: [], updatedAt: 0 }; }
+  }
+  function saveRoster() {
+    roster.updatedAt = Date.now();
+    try { localStorage.setItem(KEY_PLAYERS, JSON.stringify(roster)); } catch (e) {}
+  }
+  function uid() {
+    return 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  }
+  function findPlayer(id) { const s = String(id); return roster.players.find(p => String(p.id) === s) || null; }
 
   const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
@@ -471,11 +969,498 @@ h1 span{color:var(--muted);font-weight:600}
   }
   function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
 
+  // Cette version est dédiée au jeu de dés : le mode tableau est retiré de l'UI.
+  // On fixe toujours le mode dés (le stockage garde de la place pour plus tard).
+  const KEY_MODE = '20k-scorecard-mode';
+  let MODE = 'des';
+  function saveMode() { try { localStorage.setItem(KEY_MODE, MODE); } catch (e) {} }
+
   let S = load() || fresh();
   let msg = null, msgTimer = 0;
   let confirmNew = false, confirmStart = false, confirmTimer = 0;
   let pulseVol = false;
   let sheet = null; // 'log' when the turn history is open
+  let editingPlayer = null; // id du joueur en cours d'édition dans le répertoire, ou '' pour un nouveau
+  let editingName = '', editingColor = '';
+
+  // ---- Mode dés (état de partie distinct, clé localStorage « -des ») --------
+  function freshDes() {
+    return {
+      screen: 'setup-des', count: 4, names: [], players: [], playerIds: [], selected: [],
+      current: 0, winner: null, prevTurn: null,
+      turn: null, phase: 'idle', steal: null, log: [], keptByRoll: [],
+      gameId: 1, jetLog: [], stats: [], histView: -1
+    };
+  }
+  function loadDes() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(KEY_DES));
+      if (!raw || !raw.screen) return null;
+      const d = freshDes();
+      const players = Array.isArray(raw.players) ? raw.players.map(p =>
+        (!p || typeof p.score !== 'number') ? { score: 0, last: null } : {
+          score: p.score, last: typeof p.last === 'number' ? p.last : null }) : [];
+      if (!(raw.screen === 'game-des') || !players.length) {
+        // En écran de config (ou partie sans joueur), on conserve quand même
+        // l'historique, le compteur de parties et la sélection courante pour
+        // l'affichage de l'accueil.
+        d.stats = Array.isArray(raw.stats) ? raw.stats.filter(s => s && typeof s.ts === 'number') : [];
+        d.gameId = Number.isInteger(raw.gameId) ? raw.gameId : 1;
+        d.selected = Array.isArray(raw.selected) ? raw.selected.filter(p => typeof p === 'string') : [];
+        d.count = Number.isInteger(raw.count) && raw.count >= 2 ? raw.count : 4;
+        return d;
+      }
+      d.screen = 'game-des';
+      d.players = players;
+      d.names = Array.isArray(raw.names) ? raw.names.map((n, i) => (typeof n === 'string' && n.trim()) ? n : 'Joueur ' + (i + 1)) : [];
+      d.playerIds = Array.isArray(raw.playerIds) ? raw.playerIds.filter(p => typeof p === 'string') : [];
+      d.selected = Array.isArray(raw.selected) ? raw.selected.filter(p => typeof p === 'string') : [];
+      d.count = Array.isArray(raw.names) ? raw.names.length : (typeof raw.count === 'number' ? raw.count : 4);
+      d.current = Number.isInteger(raw.current) && raw.current >= 0 && raw.current < players.length ? raw.current : 0;
+      d.winner = Number.isInteger(raw.winner) && raw.winner >= 0 && raw.winner < players.length ? raw.winner : null;
+      d.prevTurn = (raw.prevTurn && Number.isInteger(raw.prevTurn.player) && typeof raw.prevTurn.gain === 'number')
+        ? { player: raw.prevTurn.player, gain: raw.prevTurn.gain, leftoverDice: Array.isArray(raw.prevTurn.leftoverDice) ? raw.prevTurn.leftoverDice : [] }
+        : null;
+      d.turn = raw.turn || null;
+      d.phase = raw.phase === 'normal' || raw.phase === 'steal' ? raw.phase : 'idle';
+      d.steal = null;
+      d.log = Array.isArray(raw.log) ? raw.log.filter(e => e && typeof e.n === 'number') : [];
+      d.keptByRoll = Array.isArray(raw.keptByRoll) ? raw.keptByRoll.filter(g => g && Number.isInteger(g.jet)) : [];
+      d.gameId = Number.isInteger(raw.gameId) ? raw.gameId : 1;
+      d.jetLog = Array.isArray(raw.jetLog) ? raw.jetLog.filter(e => e && typeof e.n === 'number') : [];
+      d.stats = Array.isArray(raw.stats) ? raw.stats.filter(s => s && typeof s.ts === 'number') : [];
+      return d;
+    } catch (e) {}
+    return null;
+  }
+  function saveDes() { try { localStorage.setItem(KEY_DES, JSON.stringify(DS)); } catch (e) {} }
+  let DS = loadDes() || freshDes();
+  loadRoster();
+  // Sur un tout premier chargement (répertoire vide), on place quelques joueurs
+  // d'exemple pour montrer la sélection et les statistiques. Marqué par un flag
+  // pour ne pas ré-injecter après une suppression volontaire.
+  if (!roster.players.length && (function () { try { return !localStorage.getItem('20k-players-demo'); } catch (e) { return false; } })()) {
+    const seed = [
+      ['Anne', '#1f5fd6', { games: 14, wins: 5, points: 210500 }],
+      ['Benoît', '#d06d10', { games: 11, wins: 2, points: 152000 }],
+      ['Carla', '#7a3fc4', { games: 9, wins: 4, points: 174300 }],
+      ['Denis', '#16833c', { games: 6, wins: 1, points: 88000 }]
+    ];
+    roster.players = seed.map(([name, color, st]) => ({ id: uid(), name, color, stats: st }));
+    saveRoster();
+    try { localStorage.setItem('20k-players-demo', '1'); } catch (e) {}
+  }
+
+  // ---- Exemple de données (démo) pour tester l'historique -------------------
+  // Ne s'applique qu'une seule fois au tout premier chargement, pour que la
+  // liste « Parties terminées » (et la reprise d'une partie) soit visible et
+  // testable avant d'avoir fini une vraie partie. Marqué « démo » dans le nom.
+  const KEY_DEMO = '20k-scorecard-v1-des-demo';
+  function seedDesDemo() {
+    if (DS.stats.length) return;              // de vraies parties existent déjà
+    const now = Date.now();
+    const one = 60000, hour = 3600000;
+    DS.stats.push({                      // partie terminée il y a ~2 jours
+      ts: now - 2 * 24 * hour, g: 0, v: VERSION,
+      names: ['Anne', 'Benoît', 'Carla'],
+      players: [{ score: 20000, last: 300 }, { score: 16450, last: 0 }, { score: 13200, last: 0 }],
+      winner: 0, jets: 41
+    });
+    DS.stats.push({                      // partie terminée il y a ~1 heure
+      ts: now - 1 * hour - one * 20, g: 1, v: VERSION,
+      names: ['Denis', 'Éva'],
+      players: [{ score: 12050, last: 450 }, { score: 20000, last: 200 }],
+      winner: 1, jets: 27
+    });
+    // Pas de partie en cours injectée : la démo ne doit pas « prêter » ses noms
+    // (Alice/Bob/…) à une vraie nouvelle partie. La carte « Reprendre » n'apparaît
+    // donc que pour une vraie partie interrompue, et « Commencer une partie »
+    // propose les noms par défaut (Joueur 1, Joueur 2, …).
+    try { localStorage.setItem(KEY_DEMO, '1'); } catch (e) {}
+    saveDes();
+  }
+  // L'exemple n'est injecté QUE sur un tout premier chargement vierge (aucune
+  // partie en cours, aucun joueur, aucun historique) : jamais sur une vraie
+  // partie déjà commencée, ni une fois l'exemple déjà posé (KEY_DEMO).
+  function neverSeeded() { try { return !localStorage.getItem(KEY_DEMO); } catch (e) { return false; } }
+
+  // Nettoyage d'une ancienne démo résiduelle (versions 3.42+ ) : elle avait
+  // injecté une « partie en cours » Alice/Bob/Charlie dont les noms se
+  // propageaient aux nouvelles parties. Si on détecte cette partie fantôme
+  // (joueurs nommés uniquement parmi {Alice, Bob, Charlie}, issus de la démo),
+  // on la retire (l'historique est conservé) pour revenir à un accueil propre.
+  function stripDemoResume() {
+    try {
+      const gm = DS.names, pl = DS.players;
+      if (!Array.isArray(pl) || !pl.length) return;
+      const demoNames = new Set(['Alice', 'Bob', 'Charlie']);
+      const isDemo = Array.isArray(gm)
+        && gm.every(n => demoNames.has(n))
+        && pl.length === gm.length && gm.length >= 1 && gm.length <= 3;
+      if (isDemo) {
+        DS.names = []; DS.players = []; DS.count = 4; DS.current = 0;
+        DS.screen = 'setup-des';
+        DS.prevTurn = null; DS.turn = null; DS.phase = 'idle'; DS.steal = null;
+        DS.log = []; DS.keptByRoll = []; DS.jetLog = [];
+        saveDes();
+      }
+    } catch (e) {}
+  }
+
+  if (!DS.stats.length && DS.screen === 'setup-des' && !DS.names.length && !DS.players.length && neverSeeded()) {
+    seedDesDemo();
+  }
+  stripDemoResume();
+  const inDesMode = () => MODE === 'des' && (DS.screen === 'setup-des' || DS.screen === 'game-des');
+
+  // ---- Actions du mode dés -----------------------------------------------
+  const dNext = i => (i + 1) % DS.players.length;
+
+  function dAdvance() {
+    const p = DS.players[DS.current];
+    if (p.score === DES_TARGET) DS.winner = DS.current;
+    else DS.current = dNext(DS.current);
+  }
+  function dBank(production, leftoverDice) {
+    const p = DS.players[DS.current];
+    const isSteal = DS.phase === 'steal';
+    const gain = isSteal ? DS.steal.gainToSteal : 0;   // gain volé (copie, rien ne change sur le volé)
+    const bank = gain + production;
+    if (p.score + bank > DES_TARGET) {
+      flash('bad', 'Score trop élevé', 'Ça dépasserait ' + E.fmt(DES_TARGET) + '. Il faudrait encaisser exactement ' + E.fmt(DES_TARGET - p.score) + '.');
+      saveDes(); render();
+      return;
+    }
+    // Dés restants du joueur = ceux de son dernier lancer non gardés (source du vol).
+    const leftover = (leftoverDice || []).filter(d => d >= 1 && d <= 6);
+    p.score += bank; p.last = bank;
+    DS.prevTurn = { player: DS.current, gain: bank, leftoverDice: leftover };
+    DS.log.push({
+      i: DS.current, n: DS.log.length + 1,
+      add: production, stolen: gain, total: bank,
+      pass: false, after: p.score
+    });
+    // Historique : on consigne l'encaissement (vol ou normal) pour validation ultérieure.
+    const wasVol = gain > 0;
+    DS.jetLog.push({
+      v: VERSION, g: DS.gameId, n: DS.log.length, t: Date.now(), p: DS.current, j: -1,
+      dice: [], gained: bank, cumul: bank, comb: wasVol ? 'vol' : 'bank', kind: wasVol ? 'vol-bank' : 'bank'
+    });
+    dAdvance();
+    if (DS.winner !== null) {
+      dArchive();
+      if (S.sound !== false) { victory(); say(DS.names[DS.winner] + ' gagne avec ' + E.fmt(DES_TARGET) + ' points!', null); }
+    }
+    DS.turn = null; DS.phase = 'idle'; DS.steal = null;
+    return { wasVol, gain, bank };
+  }
+  function dLose() {
+    const st = DS.turn;
+    const wasSteal = DS.phase === 'steal';
+    DS.log.push({ i: DS.current, n: DS.log.length + 1, add: 0, stolen: 0, total: 0, pass: true, after: DS.players[DS.current].score });
+    // Une perte efface l'occasion de vol (comme « Aucun point » au tableau).
+    DS.prevTurn = null;
+    dAdvance();
+    DS.turn = null; DS.phase = 'idle'; DS.steal = null;
+    return { wasSteal };
+  }
+  // Enregistre chaque lancer (jet) pour l'historique consultable / exportable.
+  // kind : 'roll' (jet normal), 'perdu', 'bank' (encaissé), 'vol' (jet en phase de vol)
+  function recordJet(kind, extra) {
+    const st = DS.turn;
+    const rollNum = (st && st.lancers) || 0;
+    const dice = (st && (Array.isArray(st.handLost) ? st.handLost : st.inHand)) || [];
+    DS.jetLog.push({
+      v: VERSION,                // version du logiciel (pour validation)
+      g: DS.gameId,              // numéro de partie
+      n: DS.log.length + 1,      // numéro de tour
+      t: Date.now(),             // horodatage
+      p: DS.current,             // joueur
+      j: rollNum,                // numéro de lancer dans le tour
+      dice: dice,                // les dés jetés
+      color: jetColor(rollNum - 1),   // couleur du jet (per-jet, distinct de la valeur)
+      gained: (st && st.gained) || 0,          // points du lancer
+      cumul: (st && st.score) || (st && st.total) || 0,  // total du tour
+      comb: (st && st.combinaison) || (extra && extra.comb) || '',
+      kept: (st && st.kept) || [],
+      kind: kind
+    });
+  }
+  function resetJetLog() { DS.jetLog = []; }
+  // Archive une partie terminée dans l'historique (stats) des parties.
+  function dArchive() {
+    DS.stats.push({
+      ts: Date.now(),           // date de fin
+      g: DS.gameId,             // numéro de partie
+      v: VERSION,               // version utilisée
+      names: DS.names.slice(),
+      players: DS.players.map(p => ({ score: p.score, last: p.last })),
+      winner: DS.winner,
+      jets: DS.jetLog.length    // nb de jets enregistrés
+    });
+    // Mise à jour des statistiques des joueurs du répertoire.
+    const ids = (DS.playerIds || []);
+    if (ids.length && (DS.winner !== null && DS.winner >= 0 && DS.winner < DS.players.length)) {
+      ids.forEach((id, i) => {
+        const p = findPlayer(id);
+        if (!p) return;
+        p.stats.games += 1;
+        p.stats.points += (DS.players[i] ? DS.players[i].score : 0);
+        if (i === DS.winner) p.stats.wins += 1;
+      });
+      saveRoster();
+    }
+    DS.gameId = DS.gameId + 1;  // prochaine partie
+  }
+  function dVolOffer() {
+    if (DS.phase !== 'idle' || DS.turn) return false;   // seulement avant le lancer d'un tour
+    if (DS.screen !== 'game-des') return false;
+    if (DS.winner !== null) return false;
+    const p = DS.players[DS.current];
+    const vt = DS.prevTurn;
+    if (!vt || vt.gain <= 0 || vt.player === DS.current) return false;
+    return T.canVol(p.score, vt.gain, 0, DES_TARGET);
+  }
+  function dStealReason() {
+    if (DS.phase !== 'idle') return '';
+    const p = DS.players[DS.current];
+    const vt = DS.prevTurn;
+    if (!vt || vt.gain <= 0) return 'Aucun gain à voler';
+    if (vt.player === DS.current) return '';
+    if (p.score < T.VOL_PASSEPORT) return 'Nécessite ' + E.fmt(T.VOL_PASSEPORT) + ' points minimum';
+    if (T.canVol(p.score, vt.gain, 0, DES_TARGET)) return '';
+    return 'Pas assez de place pour voler ' + E.fmt(vt.gain) + ' + 50';
+  }
+
+  function dAct(a, v) {
+    switch (a) {
+      case 'godes':      // depuis l'accueil tableau -> mode dés
+        MODE = 'des'; saveMode();
+        if (!DS.screen || DS.screen === 'setup-des') DS.screen = 'setup-des';
+        break;
+      case 'gotab':      // depuis le mode dés -> mode tableau
+        MODE = 'tab'; saveMode();
+        S.screen = 'setup';
+        break;
+      case 'count': DS.count = +v; saveDes(); break;
+      case 'togsel': {   // cocher/décocher un joueur du répertoire pour la partie
+        const id = String(v); DS.selected = DS.selected || [];
+        DS.selected = DS.selected.includes(id) ? DS.selected.filter(x => x !== id) : DS.selected.concat(id);
+        if (DS.selected.length >= 2) DS.count = DS.selected.length;
+        saveDes();
+        break;
+      }
+      case 'roster': DS.screen = 'roster'; saveDes(); OL.error = ''; olEnsureConn(); break;
+      case 'backdes': DS.screen = 'setup-des'; saveDes(); break;
+      case 'pedit':   // éditer un joueur (v=id, vide = nouveau)
+        if (v) { const p = findPlayer(v); editingName = p ? p.name : ''; editingColor = p ? p.color : ''; }
+        else { editingName = ''; editingColor = PLAYER_COLORS[0]; }
+        editingPlayer = (v || '');
+        render(); break;
+      case 'pfield': editingName = String(v == null ? '' : v).slice(0, 18); render(); break;
+      case 'setcolor': editingColor = String(v); render(); break;
+      case 'psave': {  // enregistrer le formulaire de l'éditeur de joueurs
+        const name = editingName.trim();
+        const connected = !!(OL.ws && OL.ws.readyState === 1);
+        if (editingPlayer) {
+          const p = findPlayer(editingPlayer);
+          if (p) {
+            const newName = name || p.name;
+            const newColor = editingColor || p.color;
+            if (connected) {
+              if (typeof p.id === 'number') {
+                // Mutation via HTTP /roster (worker) ; repli WS si HTTP échoue.
+                if (p.name !== newName) olRosterMutate({ op: 'rename', id: p.id, name: newName }, { type: 'rosterRename', id: p.id, name: newName });
+                if (p.color !== newColor) olRosterMutate({ op: 'color', id: p.id, color: newColor }, { type: 'rosterColor', id: p.id, color: newColor });
+                if (p.name === newName && p.color === newColor) olRosterMutate({ op: 'get' }, { type: 'rosterGet' });
+              } else {
+                // pas encore migré : maj locale, la synchro le poussera
+                p.name = newName; p.color = newColor; saveRoster();
+              }
+            } else {
+              p.name = newName; p.color = newColor;
+              saveRoster();
+            }
+          }
+        } else if (name) {
+          if (connected) {
+            // Ajout via HTTP /roster (worker) : le serveur attribue un id numérique.
+            olRosterMutate({ op: 'add', name, color: editingColor || PLAYER_COLORS[0] }, { type: 'rosterAdd', name, color: editingColor || PLAYER_COLORS[0] });
+          } else {
+            roster.players.push({ id: uid(), name, color: editingColor || PLAYER_COLORS[0], stats: { games: 0, wins: 0, points: 0 } });
+            saveRoster();
+          }
+        }
+        editingPlayer = null; editingName = ''; editingColor = '';
+        render(); break;
+      }
+      case 'pcancel': editingPlayer = null; editingName = ''; editingColor = ''; render(); break;
+      case 'pdel': {   // supprimer un joueur
+        const id = String(v);
+        const p = findPlayer(id);
+        roster.players = roster.players.filter(x => String(x.id) !== id);
+        DS.selected = (DS.selected || []).filter(x => String(x) !== id);
+        saveRoster(); saveDes();
+        if (OL.ws && OL.ws.readyState === 1 && p && typeof p.id === 'number') {
+          // Suppression via HTTP /roster (worker) ; repli WS. Le serveur retire l'id
+          // (jamais réattribué) et conserve l'historique des stats.
+          olRosterMutate({ op: 'del', id: p.id }, { type: 'rosterDel', id: p.id });
+        }
+        if (OL.profile && OL.profile.id != null && String(OL.profile.id) === id) OL.profile = null;
+        render(); break;
+      }
+      case 'start': {
+        const ids = (DS.selected || []).filter(id => findPlayer(id));
+        if (ids.length < 2) break;   // il faut au moins 2 joueurs du répertoire
+        DS.playerIds = ids.slice();
+        // Garder l'ordre des joueurs du répertoire ; noms pris depuis les profils.
+        DS.names = ids.map(id => findPlayer(id).name);
+        DS.players = DS.names.map(() => ({ score: 0, last: null }));
+        DS.count = DS.names.length;
+        DS.current = 0; DS.winner = null; DS.prevTurn = null;
+        DS.turn = null; DS.phase = 'idle'; DS.steal = null; DS.log = []; DS.keptByRoll = [];
+        DS.jetLog = [];
+        if (DS.gameId <= 0) DS.gameId = 1;
+        DS.screen = 'game-des';
+        saveDes();
+        break;
+      }
+      case 'detview': {   // voir le détail final (lecture seule) d'une partie terminée
+        const idx = +v;
+        const past = DS.stats[idx];
+        if (!past) break;
+        DS.histView = idx;   // on rendra le détail de cette partie archivée
+        DS.screen = 'dethist';
+        break;
+      }
+      case 'backhist': DS.histView = -1; DS.screen = 'setup-des'; saveDes(); break;
+      case 'lancier': {   // début de tour normal (renonce au vol)
+        DS.turn = T.start(T.fresh());
+        DS.phase = 'normal';
+        DS.keptByRoll = [];   // le 1er jet s'affiche via la main courante
+        if (DS.turn.type === 'rolling') recordJet('roll');
+        break;
+      }
+      case 'rolldes': {   // relancer les dés non gardés
+        const st = DS.turn;
+        if (!st || st.type !== 'rolling') break;
+        // Quand le jet précédent a rapporté sur TOUS ses dés (allScored), la
+        // relance rejoue les 6 dés : AUCUN dé n'est tenu, on vide keptByRoll.
+        // Sinon, les dés gardés de ce jet deviennent « tenus » (colorés par jet).
+        const prevAllScored = !!st.allScored;
+        const prevKept = (st.kept || []);
+        const prevJet = st.lancers || 1;
+        DS.turn = T.roll(st);
+        if (DS.turn.type === 'perdu') { recordJet('perdu'); break; }
+        recordJet('roll');
+        if (prevAllScored) {
+          DS.keptByRoll = [];
+        } else if (prevKept.length) {
+          DS.keptByRoll.push({ jet: prevJet, dice: prevKept });
+        }
+        break;
+      }
+      case 'dasser': {   // après un tour perdu, passer au joueur suivant (sans son)
+        if (DS.turn && DS.turn.type === 'perdu') dLose();
+        break;
+      }
+      case 'stopdes': {   // encaisser
+        const st = DS.turn;
+        if (!st || st.type !== 'rolling') break;
+        const leftover = (st.toRoll || []).slice();
+        if (DS.phase === 'steal') {
+          if (st.score < DES_VOL_MIN_PROD) break;   // il faut au moins 50 produits
+          DS.turn = st;                              // conserve le rolling pour le log/renvoi
+          dBank(st.score, leftover);
+        } else {
+          const playerStarted = (DS.players[DS.current].score > 0);
+          const threshold = playerStarted ? 1 : T.OUVRAGE;   // 1000 seulement au 1er score
+          if (st.score < threshold) break;
+          const production = st.score;
+          // Validation via le moteur pour le 1er score (exige 1000) ; sinon,
+          // un joueur déjà ouvert peut encaisser dès 1 point (l'état banked est
+          // simplement fabriqué sans recoder les règles de scoring).
+          let banked;
+          if (playerStarted) {
+            banked = { type: 'banked', total: st.score, lancers: st.lancers, kept: st.kept };
+          } else {
+            banked = T.stop(st);
+          }
+          if (!banked || banked.type !== 'banked') break;
+          DS.turn = banked;
+          dBank(production, leftover);
+        }
+        break;
+      }
+      case 'volerd': {    // démarrer une phase de vol sur les dés restants du précédent
+        const vt = DS.prevTurn;
+        if (!dVolOffer() || !vt) break;
+        // On repart des dés restants du précédent ; s'il n'en a laissé aucun,
+        // on lui ré-attribue une main neuve de 6 dés (règle vol ré-attribué).
+        const hand = (vt.leftoverDice && vt.leftoverDice.length)
+          ? vt.leftoverDice : undefined;
+        DS.steal = { sourcePlayer: vt.player, gainToSteal: vt.gain, leftoverDice: hand };
+        DS.turn = T.start(T.fresh(), hand);
+        DS.phase = 'steal';
+        DS.keptByRoll = [];   // le 1er jet de vol s'affiche via la main courante
+        if (DS.turn.type === 'rolling') recordJet('vol');
+        break;
+      }
+      case 'dresume':    // reprendre la partie aux dés en cours
+        DS.screen = 'game-des';
+        break;
+      case 'desnew': {   // nouvelle partie aux dés -> écran de configuration
+        DS.screen = 'setup-des';
+        DS.turn = null; DS.phase = 'idle'; DS.steal = null; DS.keptByRoll = [];
+        if (DS.winner !== null) {  // après une victoire on repasse par l'écran de config
+          DS.players = []; DS.names = []; DS.winner = null; DS.prevTurn = null; DS.log = [];
+        }
+        break;
+      }
+      case 'sound':
+        S.sound = S.sound === false; save(); break;
+      case 'deslog': {   // exporter l'historique des jets (validation)
+        try {
+          const blob = JSON.stringify({ app: VERSION, exportedAt: new Date().toISOString(), jets: DS.jetLog }, null, 2);
+          const d = document.createElement('textarea'); d.value = blob; document.body.appendChild(d); d.select();
+          let copied = false;
+          try { copied = document.execCommand('copy'); } catch (e) {}
+          if (navigator.clipboard && navigator.clipboard.writeText && !copied) {
+            navigator.clipboard.writeText(blob).catch(() => {});
+            copied = true;
+          }
+          document.body.removeChild(d);
+          flash('good', 'Historique copié', 'Le détail des jets (version ' + VERSION + ') a été copié dans le presse-papier.');
+        } catch (e) { flash('warn', 'Export', 'Impossible de copier l\'historique.'); }
+        break;
+      }
+      case 'online': oDo('online'); break;
+      case 'ocreate': oDo('ocreate'); break;
+      case 'ojoin': oDo('ojoin'); break;
+      case 'orejoin': oDo('orejoin'); break;
+      case 'ostart': oDo('ostart'); break;
+      case 'orestart': oDo('orestart'); break;
+      case 'oleave': oDo('oleave'); break;
+      case 'obank': oDo('obank'); break;
+      case 'olost': oDo('olost'); break;
+      case 'oroll': oDo('oroll'); break;
+      case 'orollall': oDo('orollall'); break;
+      case 'ovol': oDo('ovol'); break;
+      case 'ostats': oDo('ostats'); break;
+      case 'refreshstats': oDo('ostats'); break;
+      case 'logtoggle': oDo('logtoggle'); break;
+      case 'oinput': oDo('oinput', v); break;
+      case 'osetp': oDo('osetp', v); break;
+      case 'ojoincode': oDo('ojoincode', v); break;
+      case 'ocodetoggle': oDo('ocodetoggle', v); break;
+      case 'opendingleave': oDo('opendingleave', v); break;
+      case 'oaccept': oDo('oaccept', v); break;
+      case 'orefuse': oDo('orefuse', v); break;
+      case 'ogame': DS.screen = 'ogame'; break;
+      default: break;
+    }
+    saveDes(); render();
+  }
 
   // ---- Sounds: fanfare (a team reaches 3 500 = can steal from now on), siren (steal of 1 000+), buzzer (steal won't fit) ----
   let actx = null;
@@ -610,6 +1595,8 @@ h1 span{color:var(--muted);font-weight:600}
   }
   // A game that is in progress and could still be resumed from the setup screen.
   const resumable = () => S.players.length > 0 && S.winner === null;
+  // Partie aux dés en cours (non terminée) — peut être reprise de l'accueil.
+  const desResumable = () => DS.players.length > 0 && DS.winner === null;
 
   // Plays the sounds and the voice for a scored turn, in order:
   // victory -> fanfare (just reached 3 500) -> voice (1 500 or less left) -> steal sound for the next team.
@@ -668,7 +1655,16 @@ h1 span{color:var(--muted);font-weight:600}
         case 'replay': startGame(S.players.length || S.count); break;
         case 'log': sheet = 'log'; break;
         case 'closelog': sheet = null; break;
-        case 'new':
+        case 'godes':      // depuis l'accueil tableau -> mode dés
+        MODE = 'des'; saveMode();
+        if (!DS.screen || DS.screen === 'setup-des') DS.screen = 'setup-des';
+        break;
+      case 'desresume':  // reprendre la partie aux dés en cours
+        MODE = 'des'; saveMode();
+        DS.screen = 'game-des';
+        saveDes();
+        break;
+      case 'new':
           if (S.winner !== null || confirmNew) {
             confirmNew = false; S.count = S.players.length || S.count; S.screen = 'setup'; msg = null; sheet = null;
           } else {
@@ -702,8 +1698,18 @@ h1 span{color:var(--muted);font-weight:600}
     const resume = resumable();
     const lead = S.players.slice(0, 4).map((p, i) =>
       `${esc(S.names[i] || 'Joueur ' + (i + 1))} ${fmt(p.score)}`).join(' · ');
+    const leadDes = DS.players.slice(0, 4).map((p, i) =>
+      `${esc(DS.names[i] || 'Joueur ' + (i + 1))} ${fmt(p.score)}`).join(' · ');
     return `<div class="app"><div class="setup">
       <h1>20K <span>Scorecard</span></h1>
+      <div class="modes">
+        <button class="mode" aria-pressed="true">Tableau</button>
+        <button class="mode" data-a="godes">Avec dés</button>
+      </div>
+      ${desResumable() ? `<button class="resume des" data-a="desresume">
+        <span class="rt"><b>Reprendre la partie aux dés</b>
+        <small>${leadDes}${DS.players.length > 4 ? ' …' : ''}</small></span><span class="rt2">🎲</span>${ICON.chev}
+      </button>` : ''}
       ${resume ? `<button class="resume" data-a="resume">
         <span class="rt"><b>Reprendre la partie en cours</b>
         <small>${lead}${S.players.length > 4 ? ' …' : ''}</small></span>${ICON.chev}
@@ -717,6 +1723,377 @@ h1 span{color:var(--muted);font-weight:600}
       <button class="go${confirmStart ? ' danger' : ''}" data-a="start">${confirmStart ? 'Remplacer la partie en cours ?' : resume ? 'Nouvelle partie' : 'Commencer le jeu'}</button>
       <p class="version">Version ${VERSION}</p>
     </div></div>`;
+  }
+
+  // ---- Mode dés : rendu ---------------------------------------------------
+  function dGlyph(v) { return DICE_GLYPH[v] || String(v); }
+
+  // Une face de dé « réaliste » : grille 3×3 de points disposés comme un vrai dé.
+  // PIPS[v] = couples [ligne, colonne] où poser un point (0-indexé).
+  const PIPS = {
+    1: [[1, 1]],
+    2: [[0, 0], [2, 2]],
+    3: [[0, 0], [1, 1], [2, 2]],
+    4: [[0, 0], [0, 2], [2, 0], [2, 2]],
+    5: [[0, 0], [0, 2], [1, 1], [2, 0], [2, 2]],
+    6: [[0, 0], [1, 0], [2, 0], [0, 2], [1, 2], [2, 2]]
+  };
+  function dFace(v, pip) {
+    const dots = PIPS[v] || [];
+    const on = (r, c) => dots.some(([R, C]) => R === r && C === c);
+    let cells = '';
+    for (let r = 0; r < 3; r++) {
+      for (let c = 0; c < 3; c++) {
+        const filled = (v >= 1 && v <= 6) && on(r, c);
+        cells += `<i class="pip${filled ? '' : ' off'}"></i>`;
+      }
+    }
+    return `<span class="face"${pip ? ' style="--pip:' + pip + '"' : ''}>${cells}</span>`;
+  }
+
+  // Affiche un dé : « tenu » (points colorés par jet), « gris » (à relancer /
+  // perdant) avec des points éteints.
+  function dDie(v, kept, color) {
+    return `<span class="die ${kept ? 'kept' : 'gray'}">${dFace(v, kept ? color : '')}</span>`;
+  }
+
+  // Affiche les dés : « tenus » (des jets antérieurs, colorés par jet) puis le
+  // « lancer courant » (gardés = couleur du jet, à relancer = gris).
+  // En idle (aucun lancer), on affiche un plateau fixe de 6 dés gris pour que
+  // l'interface reste stable. En état perdu : les dés sans valeur en gris.
+  function diceRow(st) {
+    const die = (d) => d.kept
+      ? dDie(d.v, true, jetColor(d.jet))
+      : dDie(d.v, false, '');
+    // Idle : plateau fixe de 6 dés (fenêtre identique au lancer). On montre des
+    // faces 1→6 atténuées pour qu'on reconnaisse de vrais dés avant de lancer.
+    if (!st) {
+      const cells = [1, 2, 3, 4, 5, 6].map(v => dDie(v, false, '')).join('');
+      return `<div class="dgrid"><div class="dgroup"><small>6 dés — appuie sur Lancer pour débuter</small><div class="div">${cells}</div></div></div>`;
+    }
+    const perdu = st.type === 'perdu';
+    if (perdu) {
+      const keptByJet = (DS.keptByRoll || []).reduce(
+        (acc, g) => acc.concat((g.dice || []).map(v => ({ v, jet: g.jet, kept: true }))), []);
+      const lost = (st.handLost || []).map(v => ({ v, jet: 0, kept: false }));
+      let html = '';
+      if (keptByJet.length) html += `<div class="dgroup"><small>Dés tenus</small><div class="div">${keptByJet.map(die).join('')}</div></div>`;
+      if (lost.length) html += `<div class="dgroup"><small>Lancer perdant (aucun point)</small><div class="div">${lost.map(die).join('')}</div></div>`;
+      return `<div class="dgrid">${html}</div>`;
+    }
+    if (st.type !== 'rolling') return '';
+    const curJet = st.lancers || 1;
+    const keptCur = (st.kept || []);
+    const current = (st.inHand || []).map(v => ({ v, jet: curJet, kept: keptCur.includes(v) }));
+    const keptByJet = (DS.keptByRoll || []).reduce(
+      (acc, g) => acc.concat((g.dice || []).map(v => ({ v, jet: g.jet, kept: true }))), []);
+    let html = '';
+    if (keptByJet.length) html += `<div class="dgroup"><small>Dés tenus (${keptByJet.length})</small><div class="div">${keptByJet.map(die).join('')}</div></div>`;
+    html += `<div class="dgroup"><small>Lancer n°${curJet}</small><div class="div">${current.map(die).join('')}</div></div>`;
+    if (!current.length && !keptByJet.length) return '';
+    return `<div class="dgrid">${html}</div>
+      ${dHint(st) ? `<p class="dhint">${dHint(st)}</p>` : ''}`;
+  }
+
+  function dHint(st) {
+    if (st.allScored) return 'Tous les dés ont rapporté : on relance les 6 dés.';
+    const n = (st.toRoll || []).length;
+    if (n === 0) return '';
+    return n + ' dé' + (n > 1 ? 's' : '') + ' à relancer';
+  }
+
+  function viewRowDes(p, i) {
+    const active = i === DS.current && DS.winner === null;
+    const won = i === DS.winner;
+    const rem = DES_TARGET - p.score;
+    return `<section class="row${active ? ' active' : ''}${won ? ' won' : ''}" id="drow-${i}">
+      <div class="who">
+        <div class="namewrap"><span class="dot"></span>
+          <input class="name" id="dname-${i}" data-dname="${i}" value="${esc(DS.names[i])}" aria-label="Nom du joueur ${i + 1} (dés)" autocomplete="off"></div>
+        <div class="meta">
+          ${p.last !== null ? `<span class="last">Dernier : +${fmt(p.last)}</span>` : ''}
+          ${rem < DES_TARGET ? `<span class="hint">Reste ${fmt(rem)}</span>` : `<span class="hint">Objectif ${fmt(DES_TARGET)}</span>`}
+        </div>
+      </div>
+      <div class="nums">
+        <div class="num"><small>Points</small><b>${fmt(p.score)}</b></div>
+        <div class="num rem"><small>Restant</small><b>${won ? 'Gagnant!' : fmt(rem)}</b></div>
+      </div>
+    </section>`;
+  }
+
+  // Panneau du bas (plateau de dés) — interface fixe : même structure dans tous
+  // les états (idle, lancer, vol, perdu). Le bouton principal du haut lance ou
+  // relance les dés ; le bouton du bas encaisse ; sur une perte on passe au suivant.
+  function dPanel() {
+    const st = DS.turn;               // TurnDice state ou null (idle)
+    const p = DS.players[DS.current];
+    const playerName = esc(DS.names[DS.current]);
+    const currentPhase = DS.phase;
+    const isIdle = !st;
+    const isSteal = currentPhase === 'steal';
+    const nextName = DS.names.length ? esc(DS.names[dNext(DS.current)]) : '';
+
+    // En-tête commun + bouton principal (haut à droite, coloré) + badge « dés à tirer ».
+    // Nombre de dés qu'on va relancer : les non gardés du lancer courant ; en
+    // main pleine (allScored) on relance les 6.
+    let diceLeft = 0;
+    let topBtn, topLabel, topAction;
+    if (isIdle) {
+      if (dVolOffer()) {
+        // Un vol est possible : c'est l'action principale, en évidence.
+        topLabel = `🔓 Voler ${fmt(DS.prevTurn.gain)}`;
+        topAction = 'volerd';
+        const ld = DS.prevTurn.leftoverDice;
+        diceLeft = (ld && ld.length) ? ld.length : 6;   // 6 dés si rien n'a été laissé
+      } else {
+        topLabel = '🎲 Lancer les dés';
+        topAction = 'lancier';
+        diceLeft = 6;
+      }
+    } else if (st.type === 'perdu') {
+      topLabel = '';
+      topAction = '';
+    } else {
+      topLabel = '🎲 Relancer les dés';
+      topAction = 'rolldes';
+      diceLeft = st.allScored ? 6 : ((st.toRoll || []).length);
+    }
+    const diceBadge = topAction
+      ? `<span class="diceleft" style="color:${dieValueColor(diceLeft)};border-color:${dieValueColor(diceLeft)};background:${dieValueColor(diceLeft)}1f" title="Nombre de dés qui seront lancés">${diceLeft} dés</span>`
+      : '';
+    topBtn = topAction
+      ? `<div class="topctr">${diceBadge}<button class="reroll ${topAction === 'volerd' ? 'vol' : ''}" data-a="${topAction}" ${st && st.type !== 'rolling' ? 'disabled' : ''}>${topLabel}</button></div>`
+      : '';
+
+    // Total + état du tour. Pendant un vol, le total du tour = gain volé + production.
+    const totalShown = isIdle ? 0
+      : st.type === 'perdu' ? 0
+      : isSteal ? (DS.steal.gainToSteal + (st.score || 0))
+      : (st.score || 0);
+    const label1 = isIdle ? 'Au tour de' : 'Tour de';
+    const stateTxt = isIdle
+      ? `<div class="dstate">Joueur prêt à lancer.</div>`
+      : (st.type === 'perdu' ? `<div class="dstate"><b>${playerName}</b> a perdu ce tour (aucun point).</div>`
+        : st.type === 'rolling' ? `<div class="dstate">${isSteal
+            ? `<b>Vol</b> — dés restants de ${esc(DS.names[DS.steal.sourcePlayer])} · gain ${fmt(DS.steal.gainToSteal)} à copier · produis au moins ${fmt(DES_VOL_MIN_PROD)}.`
+            : `<b>Lancer n°${st.lancers}</b> · ${p.score > 0
+                ? 'encaissable dès 1 point'
+                : 'premier score : ' + fmt(T.OUVRAGE) + ' minimum'}.`}</div>`
+        : `<div class="dstate"><b>${playerName}</b> encaisse ${fmt(st.total)}.</div>`);
+
+    // Bandeau « main pleine ».
+    const allScoredBanner = (st && st.type === 'rolling' && st.allScored)
+      ? `<div class="dmsg good">🎲 Tous les dés ont rapporté : relance les 6 dés (le total du tour augmentera).</div>` : (isIdle && dVolOffer())
+      ? `<div class="dmsg good">🔓 Vol possible : partir des dés restants de <b>${esc(DS.names[DS.prevTurn.player])}</b> (gain ${fmt(DS.prevTurn.gain)} à copier).</div>`
+      : '';
+
+    // Seuil d'encaissement : 1000 seulement pour le PREMIER score d'un joueur ;
+    // ensuite il peut encaisser son tour dès 1 point.
+    const openReq = isSteal ? DES_VOL_MIN_PROD : (p.score > 0 ? 1 : T.OUVRAGE);
+
+    // Bouton(s) du bas.
+    let bottom;
+    if (isIdle) {
+      const offer = dVolOffer();
+      // Le bouton principal du haut gère le vol (s'il est possible) ou le lancer.
+      // En bas, on propose l'autre option : lancer normalement (si le haut vole).
+      if (offer && topAction === 'volerd') {
+        bottom = `<div class="actions"><button class="act ok" data-a="lancier">Lancer les 6 dés (sans voler)</button></div>`;
+      } else {
+        bottom = '';
+      }
+    } else if (st.type === 'perdu') {
+      bottom = `<button class="act slate" style="width:100%" data-a="dasser">Passer à ${nextName}</button>`;
+    } else {
+      const canTake = st.type === 'rolling' && st.score >= openReq;
+      const stopLabel = isSteal ? 'Prendre le vol' : 'Arrêter & encaisser';
+      const canTakeHint = (st.type === 'rolling' && !canTake)
+        ? `<p class="dhint">${isSteal ? 'Il faut ' + fmt(DES_VOL_MIN_PROD) + ' points produits pour encaisser le vol.'
+            : (p.score > 0 ? 'Tu peux encaisser dès 1 point — appuie sur Relancer ou Arrêter.'
+              : 'C\'est ton premier score : il faut '+fmt(T.OUVRAGE)+' points pour pouvoir encaisser.')}</p>` : '';
+      bottom = `${canTakeHint}
+        <div class="actions"><button class="act ok" data-a="stopdes" ${canTake ? '' : 'disabled'}>${stopLabel}</button></div>`;
+    }
+
+    return `<footer class="panel" id="panel">
+      ${msg ? `<div class="msg ${msg.kind}" role="alert">${ICON.info}<div><strong>${esc(msg.title)}</strong>${esc(msg.text)}</div></div>` : ''}
+      <div class="dice-wrap">
+        <div>
+          <div class="label">${label1} <b>${playerName}</b></div>
+          <div class="dturn">
+            <span class="dlab">Tour</span><span class="damt">${fmt(totalShown)}</span>
+            ${st && st.type === 'rolling' && st.gained ? `<span class="dgain">(+${fmt(st.gained)} ce lancer)</span>` : ''}
+          </div>
+          ${stateTxt}
+        </div>
+        ${topBtn}
+      </div>
+      ${allScoredBanner}
+      ${diceRow(st)}
+      ${(isIdle && !dVolOffer()) ? `<p class="dsub">Tu as ${fmt(DES_TARGET - p.score)} points · objectif ${fmt(DES_TARGET)}.</p>` : ''}
+      ${bottom}
+    </footer>`;
+  }
+
+  function viewGameDes() {
+    const w = DS.winner;
+    return `<div class="app">
+      <header class="top">
+        <h1>20K <span>Dés</span></h1>
+        <div class="tools">
+          <button class="tool" data-a="deslog" aria-label="Exporter l'historique des jets" title="Exporter jets">Historique</button>
+          <button class="tool sound" data-a="sound" aria-label="${S.sound === false ? 'Activer le son' : 'Couper le son'}" title="${S.sound === false ? 'Son coupé' : 'Son activé'}">${S.sound === false ? ICON.mute : ICON.sound}</button>
+          <button class="tool" data-a="desnew" title="Nouvelle partie aux dés">Nouveau</button>
+        </div>
+      </header>
+      ${w !== null ? `<div class="win">
+        <h2>🏆 ${esc(DS.names[w])} gagne avec ${fmt(DS.players[w].score)} points!</h2>
+        <div class="btns">
+          <button class="replay" data-a="start">Rejouer</button>
+          <button class="fresh" data-a="desnew">Nouveau jeu</button>
+        </div></div>` : ''}
+      <main class="list">${DS.players.map(viewRowDes).join('')}</main>
+      ${w === null ? dPanel() : ''}
+      ${DS.jetLog.length ? `<details class="des-log" open><summary>Jets (${DS.jetLog.length}) · derniers en haut</summary>
+        <p class="dloghead">Partie #${DS.gameId} · version ${esc(VERSION)} · du plus récent au plus ancien</p>
+        ${DS.jetLog.slice().reverse().map(e => {
+          const nm = esc(DS.names[e.p] || `Joueur ${e.p + 1}`);
+          const kindLabel = e.kind === 'bank' ? 'ENC.' : e.kind === 'vol-bank' ? 'VOL ENC.' : e.kind === 'perdu' ? 'PERDU' : 'jet';
+          const comb = e.comb ? ` · ${esc(e.comb)}` : '';
+          const cls = e.kind === 'perdu' ? ' none' : (e.kind === 'bank' || e.kind === 'vol-bank') ? ' vol' : ' lv';
+          const c = e.color || '#999';
+          const dice = (e.dice || []).map(d => `<span style="color:${c}">${dGlyph(d)}</span>`).join(' ');
+          return `<div class="djetrow"><span class="ln">T${e.n || 0}.${e.j > 0 ? e.j : ''}</span>
+            <span class="lnm">${nm}</span>
+            <span class="ddice-mini">${dice || '·'}</span>
+            <span class="lv${cls}">${kindLabel} ${fmt(e.gained || 0)}${comb}</span>
+            <span class="ls">= ${fmt(e.cumul || 0)}</span></div>`;
+        }).join('')}</details>` : ''}
+    </div>`;
+  }
+
+  // Détail (lecture seule) d'une partie terminée : gagnant + scores, sans pouvoir jouer.
+  function viewDesHist() {
+    const i = DS.histView;
+    const g = (i >= 0 && DS.stats[i]) ? DS.stats[i] : null;
+    if (!g) { DS.screen = 'setup-des'; return viewSetupDes(); }
+    const date = new Date(g.ts).toLocaleDateString('fr-CA', { day: 'numeric', month: 'long', year: 'numeric' });
+    const win = g.winner >= 0 ? g.names[g.winner] : '?';
+    const winIdx = g.winner;
+    const rows = g.players.map((p, pl) => {
+      const won = pl === winIdx;
+      const place = { 0: '🥇', 1: '🥈', 2: '🥉' }[pl] || (pl + 1) + 'e';
+      return `<section class="row${won ? ' won' : ''}">
+        <div class="who"><div class="namewrap"><span class="dot"></span><span class="name">${esc(g.names[pl] || 'J' + (pl + 1))}</span></div>
+          <div class="meta">${place}</div></div>
+        <div class="nums"><div class="num"><small>Points</small><b>${fmt(p.score)}</b></div>
+          <div class="num rem"><small>${won ? 'Gagnant 🏆' : 'Restant'}</small><b>${won ? '' : fmt(DES_TARGET - p.score)}</b></div></div>
+      </section>`;
+    }).join('');
+    return `<div class="app"><div class="ogame">
+      <div class="top"><button class="tool" data-a="backhist">← Retour</button>
+        <span class="rcode small"><b>#${g.g || i + 1}</b></span></div>
+      <h1>20K <span>aux dés</span></h1>
+      <div class="dmsg good">🏆 <b>${esc(win)}</b> a gagné — ${date} · ${g.jets} jet${g.jets === 1 ? '' : 's'}</div>
+      <div class="rows">${rows}</div>
+      <button class="act slate" style="width:100%;margin-top:10px" data-a="backhist">← Retour à l'accueil</button>
+      <p class="version">Partie terminée — historique</p>
+    </div></div>`;
+  }
+
+  function viewSetupDes() {
+    const resumableDes = () => DS.players.length > 0 && DS.winner === null;
+    const resume = resumableDes();
+    const lead = DS.players.slice(0, 4).map((p, i) =>
+      `${esc(DS.names[i] || 'Joueur ' + (i + 1))} ${fmt(p.score)}`).join(' · ');
+    const sel = DS.selected = (DS.selected || []).filter(id => findPlayer(id));
+    // Sélection des joueurs du répertoire.
+    let playersHtml;
+    if (!roster.players.length) {
+      playersHtml = `<div class="roster-empty">Aucun joueur enregistré.
+        <button class="act slate" data-a="roster">Créer des joueurs</button></div>`;
+    } else {
+      const chips = roster.players.map(p => {
+        const on = sel.includes(p.id);
+        return `<button class="pchip${on ? ' on' : ''}" data-a="togsel" data-v="${esc(p.id)}" aria-pressed="${on}">
+          <span class="avat" style="background:${p.color}">${esc((p.name[0] || '?').toUpperCase())}</span>
+          <span class="pnm">${esc(p.name)}</span>
+          <span class="pstat">${p.stats.wins} 🏆 · ${p.stats.points ? fmt(p.stats.points) : 0} pts</span>
+        </button>`;
+      }).join('');
+      playersHtml = `<div class="pchips">${chips}</div>
+        <button class="linkbtn" data-a="roster">Gérer les joueurs · statistiques</button>`;
+    }
+    const goDisabled = sel.length < 2;
+    return `<div class="app"><div class="setup">
+      <h1>20K <span>aux dés</span></h1>
+      ${resume ? `<button class="resume" data-a="dresume">
+        <span class="rt"><b>Reprendre la partie en cours</b>
+        <small>${lead}${DS.players.length > 4 ? ' …' : ''}</small></span>${ICON.chev}
+      </button>` : ''}
+      ${DS.stats.length ? `<div class="past"><h2>Parties terminées (cet appareil)</h2>
+        ${DS.stats.slice().reverse().map((g, ri) => {
+          const idx = DS.stats.length - 1 - ri;
+          const date = new Date(g.ts).toLocaleDateString('fr-CA', { day: 'numeric', month: 'short' });
+          const winName = esc(g.names[g.winner] || '?');
+          const scores = g.players.map((p, i) => `${esc(g.names[i] || 'J')} ${fmt(p.score)}`).join(' · ');
+          return `<button class="pastrow" data-a="detview" data-v="${idx}">
+            <span class="rt"><b>🏆 ${winName}</b><small>${date} · ${scores} · ${g.jets} jet${g.jets===1?'':'s'} — voir le détail</small></span>${ICON.chev}
+          </button>`;
+        }).join('')}</div>`
+      : ''}
+      ${DS.stats.length ? '' : ''}
+      <div><h2>Joueurs de la partie <span class="cnt">${sel.length}</span></h2>${playersHtml}</div>
+      <ul class="rules">
+        <li>6 dés : garde les dés qui rapportent, relance le reste</li>
+        <li>Ouverture <b>${fmt(1000)}</b> avant de pouvoir encaisser</li>
+        <li>Vol permis à partir de <b>${fmt(3500)}</b></li>
+        <li>Objectif exact : <b>${fmt(20000)}</b></li>
+      </ul>
+      <button class="go" data-a="start" ${goDisabled ? 'disabled' : ''}>Commencer la partie (${sel.length} joueur${sel.length===1?'':'s'})</button>
+      <button class="act slate" data-a="online" style="width:100%">🌐 Jouer en ligne (parties & historique en ligne)</button>
+      <button class="linkbtn" style="margin-top:6px" data-a="ostats">📊 Mes parties terminées en ligne</button>
+      <p class="version">Version ${VERSION}</p>
+    </div></div>`;
+  }
+
+  function viewRoster() {
+    const row = p => `<div class="prow">
+        <span class="avat" style="background:${p.color}">${esc((p.name[0] || '?').toUpperCase())}</span>
+        <div class="pinfo"><b>${esc(p.name)}</b>
+          <small>${p.stats.games} partie${p.stats.games===1?'':'s'} · ${p.stats.wins} vi${p.stats.wins===1?'ctoire':'ctoires'} · ${fmt(p.stats.points)} pts cumulés</small></div>
+        <div class="pops">
+          ${p.stats.wins ? `<span class="trophy">🏆</span>` : ''}
+          <button class="mini" data-a="pedit" data-v="${esc(p.id)}">✎</button>
+          <button class="mini danger" data-a="pdel" data-v="${esc(p.id)}">✕</button>
+        </div>
+      </div>`;
+    const editor = editingPlayer !== null ? editorForm() : '';
+    return `<div class="app"><div class="setup">
+      <h1>Joueurs <span>du répertoire</span></h1>
+      <p class="dsub">Vos profils sont enregistrés et gardent leurs statistiques. À terme, ils pourront être partagés entre vos appareils.</p>
+      ${editor}
+      <div class="plist">
+        ${roster.players.length ? roster.players.map(row).join('') : '<p class="dsub">Aucun joueur pour le moment. Ajoutez le premier ci-dessous.</p>'}
+      </div>
+      <button class="act ok" style="width:100%" data-a="pedit" data-v="">+ Ajouter un joueur</button>
+      <button class="linkbtn" style="margin-top:10px" data-a="backdes">← Retour à l\'accueil</button>
+      <p class="version">Version ${VERSION}</p>
+    </div></div>`;
+  }
+  function editorForm() {
+    const cur = editingColor || PLAYER_COLORS[0];
+    const swatches = PLAYER_COLORS.map(c =>
+      `<span class="sw${c === cur ? ' on' : ''}" data-a="setcolor" data-v="${c}" style="background:${c}"></span>`).join('');
+    return `<div class="peditor">
+      <input type="text" id="p-name" value="${esc(editingName || '')}" placeholder="Nom du joueur" maxlength="18">
+      <div class="pcolors">${swatches}</div>
+      <div class="pbtns">
+        <button class="act ok" data-a="psave" data-v="">Enregistrer</button>
+        <button class="act slate" data-a="pcancel">Annuler</button>
+      </div>
+    </div>`;
   }
 
   function viewRow(p, i) {
@@ -817,11 +2194,817 @@ h1 span{color:var(--muted);font-weight:600}
     </div>`;
   }
 
+  // ============================ MODE EN LIGNE ==============================
+  // Jeu multijoueur temps réel : un hôte crée une partie (code à 4 chiffres),
+  // les autres la rejoignent. Le serveur détient l'autorité des scores et du
+  // tour ; chaque joueur exécute son propre tour localement et envoie le
+  // résultat (bank/lost) au serveur qui le diffuse à tous.
+  const ONLINE_WS_BASE = (function () {
+    try { const saved = localStorage.getItem('20k-ws');
+      if (saved && /^wss?:\/\//.test(saved)) return saved; } catch (e) {}
+    // Serveur Cloudflare déployé (Worker + Durable Object) — défaut pour tous.
+    // Le code (4 chiffres) est ajouté au chemin par olWsUrl : <base>/room/<CODE>.
+    return 'wss://20k-dice-online.perron.workers.dev';
+  })();
+  function olWsUrl(code) {
+    const b = ONLINE_WS_BASE.replace(/\/+$/, '');
+    return b + '/room/' + (code || 'm');
+  }
+  function olNewCode() {
+    let c;
+    do { c = String(Math.floor(1000 + Math.random() * 9000)); } while (OL.code && OL.code === c);
+    return c;
+  }
+  const OL = {
+    ws: null, connected: false, myIndex: -1, code: '', members: [],
+    g: null, seq: 0, error: '', myTurn: false, turnProxy: null, lastSeq: 0, keepError: false,
+    order: '', stealGain: 0, keptByRoll: [], leaving: false, profile: null, stealSource: -1,
+    logAll: false,
+    stats: { byName: {}, byId: {}, games: [] },
+    parties: [], pendingReq: false, showCodeInput: false, pending: []
+  };
+  function olSend(o) { if (OL.ws && OL.ws.readyState === 1) OL.ws.send(JSON.stringify(o)); }
+  function olLog(m) {}
+  function olClientId() {
+    try { let c = localStorage.getItem('20k-ws-client');
+      if (!c) { c = 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); localStorage.setItem('20k-ws-client', c); }
+      return c; } catch (e) { return 'c' + Math.random().toString(36).slice(2, 8); }
+  }
+  // Après un ré-ordonnancement aléatoire au démarrage, on retrouve sa place en comparant
+  // son clientId (= l'appareil). Utile aussi pour une reconnexion à une partie en cours.
+  function olReseat() {
+    // Les membres les plus frais sont dans OL.g.members ; on y lit l'info clientId.
+    const mem = (OL.g && OL.g.members) || OL.members || [];
+    if (!mem.some(m => typeof m.clientId === 'string')) return; // pas d'info clientId -> rien
+    const cid = olClientId();
+    const hit = mem.find(m => m.clientId === cid);
+    if (hit && Number.isInteger(hit.index) && hit.index !== OL.myIndex) OL.myIndex = hit.index;
+  }
+  // Mémorise la salle (code 4 chiffres) pour permettre une reconnexion après coupure.
+  // Ce device peut ensuite la reprendre (rejoindre) si la partie est toujours ouverte.
+  function olRememberRoom(code) {
+    if (!code || !/^\d{4}$/.test(code)) return;
+    try { localStorage.setItem('20k-ws-room', code); } catch (e) {}
+  }
+  function olSavedRoom() {
+    try { const c = localStorage.getItem('20k-ws-room'); if (c && /^\d{4}$/.test(c)) return c; } catch (e) {}
+    return '';
+  }
+  function olClearRoom() {
+    try { localStorage.removeItem('20k-ws-room'); } catch (e) {}
+  }
+  // Persistance du profil « Mon joueur » sélectionné : permet de reprendre la bonne
+  // identité après reconnexion / rechargement.
+  const KEY_PROFILE = '20k-ws-profile';
+  function olSetProfile(p) {
+    OL.profile = p ? { id: p.id, name: p.name } : null;
+    try { if (p) localStorage.setItem(KEY_PROFILE, p.id); else localStorage.removeItem(KEY_PROFILE); } catch (e) {}
+  }
+  function olInitProfile() {
+    try {
+      const id = localStorage.getItem(KEY_PROFILE);
+      const p = id != null ? findPlayer(id) : null;
+      if (p) OL.profile = { id: p.id, name: p.name };
+    } catch (e) {}
+  }
+  function olConnect(action) {
+    // Si un ancien WebSocket est déjà ouvert (ex. connexion d'arrière-plan depuis
+    // l'écran répertoire/stats via /room/m), on le ferme AVANT de créer/rejoindre une
+    // vraie partie : sinon `if (OL.connected) return` ferait que « Créer » ne se passe pas.
+    olStopRosterPoll();
+    if (OL.ws) { try { OL.ws.onclose = null; OL.ws.close(); } catch (e) {} OL.ws = null; OL.connected = false; }
+    let W = null;
+    try { W = window.WebSocket; } catch (e) {}
+    if (!W) { OL.error = 'WebSocket non supporté sur ce navigateur.'; render(); return; }
+    let conn;
+    try {
+      // Le code détermine la salle (chemin /room/<CODE>). L'hôte en génère un nouveau
+      // à 4 chiffres ; le rejoignant utilise celui qu'il a saisi.
+      conn = new W(olWsUrl(action === 'create' ? (OL.code = olNewCode()) : (OL.order || 'm')));
+    } catch (e) { OL.error = 'Connexion impossible.'; render(); return; }
+    OL.ws = conn;
+    conn.onopen = () => {
+      OL.connected = true;
+      olInitProfile();   // restaurer l'identité « Mon joueur » mémorisée (reprise)
+      const who = olMyName();
+      const color = olMyColor();
+      const clientId = olClientId();
+      const prof = olProfile();
+      const playerId = (prof && typeof prof.id === 'number') ? prof.id : null;
+      if (action === 'create') olSend({ type: 'create', name: who, color, clientId, playerId });
+      else olSend({ type: 'join', name: who, color, clientId, playerId });
+      olRosterSync();
+      olStartRosterPoll();
+    };
+    conn.onmessage = e => { try { olHandle(JSON.parse(e.data)); } catch (err) {} };
+    conn.onclose = () => { OL.connected = false; OL.ws = null;
+      if (!OL.leaving && !OL.keepError) {
+        const saved = olSavedRoom();
+        OL.error = saved
+          ? 'Connexion interrompue. La partie se reprend avec le code ' + saved + ' (bouton « Reprendre » ci-dessous).'
+          : 'Connexion au serveur en ligne interrompue.';
+      }
+      OL.keepError = false;
+      OL.leaving = false;
+      olStopRosterPoll();
+      render(); };
+    conn.onerror = () => { OL.error = 'Connexion au serveur impossible.'; render(); };
+  }
+  function olMyName() {
+    const p = olProfile();
+    if (p) return p.name;
+    if (roster && roster.players && roster.players.length) return roster.players[0].name;
+    return 'Moi';
+  }
+  function olMyColor() {
+    const p = olProfile();
+    if (p) return p.color;
+    if (roster && roster.players && roster.players.length) return roster.players[0].color;
+    return '#1f5fd6';
+  }
+  function olProfile() {
+    const sel = OL.profile;
+    if (sel && (sel.id != null)) { const p = findPlayer(sel.id); if (p) return p; }
+    if (roster && roster.players && roster.players.length) return roster.players[0];
+    return null;
+  }
+  // Un « Mon joueur » EXPRESSIONNEL sélectionné ? (on n'utilise pas la retombée roster[0]).
+  function olHaveProfile() {
+    return !!(OL.profile && OL.profile.id != null && findPlayer(OL.profile.id));
+  }
+  // Remplace le cache de répertoire local par la liste partagée du serveur,
+  // en conservant les stats cumulées locales et en remappant la sélection.
+  function olApplyServerRoster(srvPlayers) {
+    const prev = roster.players || [];
+    const byNumId = {}, byStrId = {}, byName = {};
+    prev.forEach(p => {
+      if (typeof p.id === 'number') byNumId[p.id] = p.stats;
+      else if (p.id != null) byStrId[String(p.id)] = p.stats;
+      if (p.name != null) byName[p.name] = p.stats;
+    });
+    const oldToNew = {};
+    const players = (srvPlayers || []).map(sp => {
+      const newId = (typeof sp.id === 'number') ? sp.id : uid();
+      // stats: priorité à l'id identique (statut synchro), puis au nom (migration string->number)
+      let stats = (typeof sp.id === 'number' && byNumId[sp.id]) || byStrId[String(sp.id)] || byName[sp.name];
+      stats = stats || { games: 0, wins: 0, points: 0 };
+      // mémoriser l'ancien id string -> nouveau id numérique (pour la sélection)
+      const oldP = prev.find(pp => pp.name === sp.name && typeof pp.id !== 'number');
+      if (oldP) oldToNew[String(oldP.id)] = newId;
+      else { const k = String(sp.id); if (k in byStrId) oldToNew[k] = newId; }
+      return { id: newId, name: sp.name, color: sp.color || PLAYER_COLORS[0], stats };
+    });
+    // FUSION : ne jamais perdre un joueur local PAS ENCORE migré (id chaîne) qui n'est
+    // pas encore sur le serveur. Il reste en attente tant que la migration rosterSave
+    // ne l'a pas fait apparaître côté serveur. Sinon un poll précoce l'effacerait.
+    const srvNames = new Set(players.map(p => String(p.name).toLowerCase()));
+    prev.forEach(p => {
+      if (typeof p.id === 'number') return;           // déjà synchro, géré ci-dessus
+      if (srvNames.has(String(p.name).toLowerCase())) return;  // déjà sur serveur
+      const pending = { id: p.id, name: p.name, color: p.color, stats: p.stats || { games: 0, wins: 0, points: 0 } };
+      if (!players.some(x => String(x.id) === String(p.id))) players.push(pending);  // garder l'en attente
+    });
+    roster = { players, updatedAt: Date.now() };
+    saveRoster();
+    // remapper la sélection de la partie locale (DS.selected) et le profil sélectionné
+    const remap = id => String(id) in oldToNew ? oldToNew[String(id)] : id;
+    if (Array.isArray(DS.selected)) DS.selected = DS.selected.map(remap);
+    if (OL.profile && OL.profile.id != null) {
+      const selNew = remap(OL.profile.id);
+      const np = players.find(pp => String(pp.id) === String(selNew) && pp.name === OL.profile.name);
+      const npByName = players.find(pp => pp.name === OL.profile.name);
+      OL.profile = np || npByName ? { id: (np || npByName).id, name: (np || npByName).name } : null;
+    }
+  }
+  // Synchronisation initiale : migration une fois (string -> numérique) sinon lecture.
+  // Passe par HTTP GET/POST /roster (le worker CF ne gère le répertoire QUE par HTTP).
+  function olRosterSync() {
+    const hasStr = (roster.players || []).some(p => !(typeof p.id === 'number'));
+    if (typeof fetch === 'function') {
+      fetch(olHttpBase() + '/roster')
+        .then(r => r.json().then(d => ({ ok: r.ok, d })).catch(() => ({ ok: false, d: null })))
+        .then(({ ok, d }) => {
+          if (ok && d && Array.isArray(d.players)) {
+            olApplyServerRoster(d.players);
+            // Migration : s'il reste un id chaîne local (pas encore sur serveur), on l'envoie.
+            const stillStr = (roster.players || []).some(p => !(typeof p.id === 'number'));
+            if (stillStr) olRosterMutate({ op: 'save', players: (roster.players || []).map(p => ({ id: p.id, name: p.name, color: p.color })) }, { type: 'rosterSave', players: (roster.players || []).map(p => ({ id: p.id, name: p.name, color: p.color })) });
+          } else if (OL.ws && OL.ws.readyState === 1) olSend({ type: 'rosterGet' });
+        })
+        .catch(() => { if (OL.ws && OL.ws.readyState === 1) olSend({ type: 'rosterGet' }); });
+      return;
+    }
+    if (OL.ws && OL.ws.readyState === 1) {
+      if (hasStr) olSend({ type: 'rosterSave', players: (roster.players || []).map(p => ({ id: p.id, name: p.name, color: p.color })) });
+      else olSend({ type: 'rosterGet' });
+    }
+  }
+  // Signature compacte du répertoire pour détecter un changement (évite un re-render inutile).
+  function rosterSig() {
+    return (roster.players || []).map(p => p.id + '|' + p.name + '|' + p.color).join('\u0001');
+  }
+  // Re-synchronisation TEMPS RÉEL : pendant qu'on est connecté et sur un écran
+  // répertoire / en ligne, on re-pull le répertoire partagé à intervalles réguliers.
+  // Ainsi, un joueur ajouté/renommé/effacé sur un autre appareil apparaît ici
+  // automatiquement, sans rechargement. En production : GET /roster (HTTP).
+  // En dev : repli WebSocket rosterGet.
+  let rosterPollTimer = 0;
+  function olStartRosterPoll() {
+    if (rosterPollTimer) return;
+    rosterPollTimer = setInterval(olRosterPoll, 2500);
+  }
+  function olStopRosterPoll() {
+    if (rosterPollTimer) { clearInterval(rosterPollTimer); rosterPollTimer = 0; }
+  }
+  // Mute le répertoire via HTTP POST /roster (même protocole que le worker CF).
+  // C'est le chemin utilisable en production : le worker ne traite PAS les mutations
+  // roster sur le WebSocket de la salle (elles vont au DO Roster par HTTP).
+  // En cas d'échec HTTP, repli WebSocket (ancien serveur de dev).
+  // cb(msg) reçoit éventuellement un message d'erreur ({msg}) à afficher.
+  function olRosterMutate(opBody, wsMsg, cb) {
+    const applyIf = () => { try { if (cb) cb(null); } catch (e) {} };
+    if (typeof fetch === 'function') {
+      const path = olHttpBase() + '/roster';
+      fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(opBody) })
+        .then(r => r.json().then(d => ({ ok: r.ok, d })).catch(() => ({ ok: false, d: null })))
+        .then(({ ok, d }) => {
+          if (ok && d && Array.isArray(d.players)) {
+            const before = rosterSig();
+            olApplyServerRoster(d.players);
+            if (rosterSig() !== before) render();   // rafraîchit l'écran dès la réponse serveur
+            applyIf();
+          } else if (OL.ws && OL.ws.readyState === 1) olSend(wsMsg);
+          else applyIf();
+        })
+        .catch(() => { if (OL.ws && OL.ws.readyState === 1) olSend(wsMsg); else applyIf(); });
+    } else if (OL.ws && OL.ws.readyState === 1) {
+      olSend(wsMsg);
+    } else applyIf();
+  }
+  function olRosterPoll() {
+    if (!OL.connected) return;
+    const s = DS.screen;
+    // Poll seulement hors partie active : écran répertoire, choix Mon joueur,
+    // hôte (liste des joueurs), stats. Pendant une partie en cours on ne veut
+    // pas perturber l'affichage du tour.
+    if (!(s === 'roster' || s === 'ojoin' || s === 'host' || s === 'ostats')) return;
+    const before = rosterSig();
+    const done = () => { if (rosterSig() !== before) render(); };
+    if (typeof fetch === 'function') {
+      fetch(olHttpBase() + '/roster')
+        .then(r => r.json().then(d => ({ ok: r.ok, d })).catch(() => ({ ok: false })))
+        .then(({ ok, d }) => {
+          if (ok && d && Array.isArray(d.players)) { olApplyServerRoster(d.players); done(); }
+          else if (OL.ws && OL.ws.readyState === 1) { olSend({ type: 'rosterGet' }); }
+        })
+        .catch(() => { if (OL.ws && OL.ws.readyState === 1) olSend({ type: 'rosterGet' }); });
+    } else if (OL.ws && OL.ws.readyState === 1) {
+      olSend({ type: 'rosterGet' });
+    }
+  }
+  function olDisconnect() {
+    OL.leaving = true;
+    try { if (OL.ws) OL.ws.close(); } catch (e) {}
+    OL.ws = null; OL.connected = false; OL.myIndex = -1; OL.code = ''; OL.members = [];
+    OL.g = null; OL.myTurn = false; OL.turnProxy = null; OL.leaving = false;
+    olStopRosterPoll();
+    olStopPartyPoll();
+    olClearRoom();
+  }
+  function olEnsureConn() {
+    if (OL.connected) { olRosterSync(); olStartRosterPoll(); olAskStats(); return; }
+    let W = null;
+    try { W = window.WebSocket; } catch (e) {}
+    if (!W) { OL.error = 'WebSocket non supporté.'; render(); return; }
+    let conn;
+    try { conn = new W(olWsUrl('m')); } catch (e) { OL.error = 'Connexion impossible.'; render(); return; }
+    OL.ws = conn;
+    conn.onopen = () => { OL.connected = true; olRosterSync(); olStartRosterPoll(); olAskStats(); };
+    conn.onmessage = e => { try { olHandle(JSON.parse(e.data)); } catch (err) {} };
+    conn.onclose = () => { if (!OL.leaving && !OL.keepError) OL.error = 'Serveur injoignable.'; OL.keepError = false; OL.connected = false; OL.ws = null; OL.leaving = false; olStopRosterPoll(); render(); };
+    conn.onerror = () => { OL.error = 'Connexion au serveur impossible.'; };
+  }
+  function olHandle(msg) {
+    switch (msg.type) {
+      case 'created': OL.code = msg.code; OL.myIndex = msg.playerIndex; OL.members = msg.members || []; OL.pendingReq = false; DS.screen = 'host';
+        olRememberRoom(msg.code); olCheckDuplicate(); olAskStats(); olStopPartyPoll(); break;
+      case 'welcome': OL.code = msg.code; OL.myIndex = msg.playerIndex; OL.members = msg.members || []; OL.pendingReq = false; DS.screen = 'host';
+        olRememberRoom(msg.code); olCheckDuplicate(); olAskStats(); olStopPartyPoll(); break;
+      case 'pending':   // ma demande d'entrée attend l'acceptation de l'hôte
+        OL.code = msg.code; OL.pendingReq = true; DS.screen = 'ojoin'; olStopPartyPoll(); break;
+      case 'parties': OL.parties = msg.parties || []; break;
+      case 'stats': OL.stats = { byName: msg.byName || {}, byId: msg.byId || {}, games: msg.games || [] }; break;
+      case 'roster': olApplyServerRoster(msg.players || []); olAskStats(); break;
+      case 'state': OL.g = msg.g; OL.seq = msg.seq; OL.members = (msg.g && msg.g.members) || OL.members; OL.keptByRoll = (msg.g && msg.g.keptByRoll) || []; if (msg.g) OL.pending = msg.g.pending || []; olReseat(); refreshMyTurn(); maybeStart(); break;
+      case 'turn': OL.g = msg.g; OL.seq = msg.seq; OL.members = (msg.g && msg.g.members) || OL.members; OL.keptByRoll = (msg.g && msg.g.keptByRoll) || []; if (msg.g) OL.pending = msg.g.pending || []; olReseat(); refreshMyTurn(); maybeStart(); break;
+      case 'peerState': OL.members = msg.members || OL.members; refreshMyTurn(); maybeStart(); break;
+      case 'pendingState': OL.pending = msg.pending || []; break;
+      case 'error': OL.error = msg.msg || msg.title || ''; break;
+      case 'createdHost': break;
+    }
+    render();
+  }
+  function olHttpBase() {
+  const b = ONLINE_WS_BASE.replace(/\/+$/, '');
+  if (/^wss:\/\//.test(b)) return b.replace(/^wss:/, 'https:');
+  if (/^ws:\/\//.test(b)) return b.replace(/^ws:/, 'http:');
+  return b;
+}
+function olAskStats() {
+  const players = roster.players || [];
+  const names = players.map(p => p.name);
+  const ids = players.map(p => (typeof p.id === 'number' ? p.id : null)).filter(x => x != null);
+  let q = 'names=' + names.map(n => encodeURIComponent(n)).join(',');
+  if (ids.length) q += '&ids=' + ids.join(',');
+  // Via HTTP /stats (worker) avec repli WebSocket sur le serveur de dev.
+  if (typeof fetch === 'function') {
+    fetch(olHttpBase() + '/stats?' + q)
+      .then(r => r.json().then(d => ({ ok: r.ok, d })).catch(() => ({ ok: false })))
+      .then(({ ok, d }) => {
+        if (ok && d && d.byName) { OL.stats = { byName: d.byName || {}, byId: d.byId || {}, games: d.games || [] }; render(); }
+        else olSend({ type: 'getStats', names, ids: ids.length ? ids : undefined });   // repli WebSocket (serveur de dev)
+      })
+      .catch(() => olSend({ type: 'getStats', names, ids: ids.length ? ids : undefined }));
+    return;
+  }
+  olSend({ type: 'getStats', names, ids: ids.length ? ids : undefined });
+}
+  // Récupère la liste des parties OUVERTES (via HTTP GET /parties, comme le worker CF).
+  // En dev, repli WebSocket « getParties » si le fetch échoue.
+  function olFetchParties() {
+    if (typeof fetch === 'function') {
+      fetch(olHttpBase() + '/parties')
+        .then(r => r.json().then(d => ({ ok: r.ok, d })).catch(() => ({ ok: false })))
+        .then(({ ok, d }) => {
+          const list = (ok && d && Array.isArray(d.parties)) ? d.parties : null;
+          if (list) { OL.parties = list; render(); }
+          else if (OL.ws && OL.ws.readyState === 1) olSend({ type: 'getParties' });
+        })
+        .catch(() => { if (OL.ws && OL.ws.readyState === 1) olSend({ type: 'getParties' }); });
+      return;
+    }
+    if (OL.ws && OL.ws.readyState === 1) olSend({ type: 'getParties' });
+  }
+  let partyPollTimer = 0;
+  function olStartPartyPoll() {
+    if (partyPollTimer) return;
+    olFetchParties();
+    partyPollTimer = setInterval(olFetchParties, 3000);
+  }
+  function olStopPartyPoll() {
+    if (partyPollTimer) { clearInterval(partyPollTimer); partyPollTimer = 0; }
+  }
+  function refreshMyTurn() {
+    if (!OL.g) { OL.myTurn = false; return; }
+    OL.myTurn = (OL.myIndex === OL.g.current) && OL.g.winner === null;
+    // Si ce n'est plus notre tour (ou partie passée), on nettoie l'état local d'un vol/lancer
+    // pour éviter qu'un vol « en cours » fantôme ne s'affiche au prochain tour (bug cellulaire).
+    if (!OL.myTurn) {
+      OL.stealSource = -1; OL.stealGain = 0;
+      // on garde turnProxy seulement si on est en plein lancer et que c'est notre tour ; ici on le nettoie.
+    }
+    if (OL.g.winner !== null) OL.stealSource = -1;
+  }
+  function onlineCount() { return OL.members.filter(m => m.online !== false).length; }
+  // Empêche de choisir un joueur DÉJÀ présent dans la partie (évite 2 fois la même personne).
+  // L'identité « Mon joueur » sélectionnée (~pon tant pid que nom) ne doit pas déjà être membre.
+  function olCheckDuplicate() {
+    const prof = OL.profile;
+    if (!prof) return;
+    const p = findPlayer(prof.id);
+    const myName = p ? p.name : (prof.name || '');
+    const dup = (OL.members || []).some(m => m.index !== OL.myIndex && (
+      (typeof m.pid === 'number' && m.pid != null && prof.id != null && String(m.pid) === String(prof.id))
+      || (m.name && myName && m.name.toLowerCase() === myName.toLowerCase())
+    ));
+    if (dup) {
+      OL.error = 'Ce joueur est déjà dans la partie. Choisissez un autre joueur ou quittez.';
+      OL.keepError = true;   // ne pas laisser le onclose écraser ce message
+      olDisconnect();
+      DS.screen = 'ojoin';   // revenir au choix du joueur pour que le message s'affiche
+      render();
+    }
+  }
+  // Le passage du Lobby à la partie ne se fait que quand le SERVEUR a 'started' :
+  // on attend dans le lobby que l'hôte appuie sur « Débuter » (plus de 2 joueurs possibles).
+  function maybeStart() {
+    if (OL.g && OL.g.started) { DS.screen = 'ogame'; return; }
+    // en pré-lancement on reste sur le lobby (host) tant que non démarré
+    if (DS.screen === 'ogame' && OL.g && !OL.g.started && !OL.g.players.some(p => p.score > 0)) DS.screen = 'host';
+  }
+  // ---- Actions en ligne ----
+  function oDo(action, v) {
+    switch (action) {
+      case 'online': OL.order = ''; OL.error = ''; OL.pendingReq = false; DS.screen = 'ojoin'; olInitProfile(); olStartPartyPoll(); render(); break;
+      case 'ocreate': OL.error = ''; if (!olHaveProfile()) { OL.error = 'Sélectionnez votre joueur (Mon joueur) avant de créer.'; render(); break; } olConnect('create'); break;
+      case 'ojoin': OL.error = ''; if (!olHaveProfile()) { OL.error = 'Sélectionnez votre joueur (Mon joueur) avant de rejoindre.'; render(); break; } olConnect('join'); break;
+      case 'ojoincode': OL.error = ''; if (!olHaveProfile()) { OL.error = 'Sélectionnez votre joueur (Mon joueur) avant de rejoindre.'; render(); break; }
+        OL.order = String(v == null ? '' : v).slice(0, 4); OL.error = ''; olConnect('join'); break;
+      case 'ocodetoggle': OL.showCodeInput = !OL.showCodeInput; render(); break;
+      case 'opendingleave': olDisconnect(); DS.screen = 'setup-des'; break;
+      case 'oaccept': {   // l'HÔTE accepte un joueur en attente (v = rs)
+        if (OL.myIndex !== 0) break;
+        OL.error = ''; olSend({ type: 'accept', rs: Number(v) }); break; }
+      case 'orefuse': {   // l'HÔTE refuse un joueur en attente (v = rs)
+        if (OL.myIndex !== 0) break;
+        OL.error = ''; olSend({ type: 'refuse', rs: Number(v) }); break; }
+      case 'orejoin': {  // reprendre une partie interrompue (code mémorisé)
+        if (!olHaveProfile()) { OL.error = 'Sélectionnez votre joueur (Mon joueur) avant de reprendre.'; render(); break; }
+        const saved = olSavedRoom();
+        if (saved) { OL.order = saved; OL.error = ''; olConnect('join'); }
+        break; }
+      case 'oinput': OL.order = String(v == null ? '' : v).slice(0, 4); break;
+      case 'logtoggle': OL.logAll = !OL.logAll; render(); break;
+      case 'oleave': olDisconnect(); olStopPartyPoll(); DS.screen = 'setup-des'; break;
+      case 'ostart': {  // l'hôte démarre la partie depuis le lobby
+        if (OL.myIndex !== 0) break;
+        OL.error = '';
+        olSend({ type: 'action', seq: ++OL.lastSeq, act: { type: 'start' } });
+        break; }
+      case 'orestart': {  // nouvelle partie avec les mêmes joueurs (tirage au sort)
+        if (OL.myIndex !== 0) break;
+        OL.error = '';
+        olSend({ type: 'action', seq: ++OL.lastSeq, act: { type: 'restart' } });
+        break; }
+      case 'ostats': DS.screen = 'ostats'; OL.error = ''; olEnsureConn(); break;
+      case 'osetp': { const p = findPlayer(String(v)); olSetProfile(p); render(); break; }
+      case 'obank': {  // le joueur actif encaisse depuis son tour local (normal ou vol)
+        const t = OL.turnProxy;
+        if (!t || !OL.myTurn) break;
+        const isSteal = OL.stealSource >= 0;
+        OL.turnProxy = null;
+        const totalDice = (t.kept || []).length + (t.toRoll || []).length;
+        olSend({ type: 'action', seq: ++OL.lastSeq,
+          act: { type: 'bank', production: t.score || 0, gain: isSteal ? (OL.stealGain || 0) : 0,
+            leftoverDice: (t.toRoll || []).slice(), diceUsed: totalDice } });
+        OL.stealGain = 0; OL.stealSource = -1; OL.myTurn = false;
+        break;
+      }
+      case 'olost': {  // le joueur actif perd son tour
+        const tl = OL.turnProxy;
+        OL.turnProxy = null;
+        olSend({ type: 'action', seq: ++OL.lastSeq,
+          act: { type: 'lost', diceUsed: tl ? ((tl.kept || []).length + (tl.toRoll || []).length) : 0 } });
+        OL.myTurn = false;
+        break;
+      }
+      case 'oroll': {  // le joueur actif lance / relance ses dés localement
+        let prev;
+        if (!OL.turnProxy) { OL.turnProxy = T.start(T.fresh()); OL.keptByRoll = []; }
+        else {
+          const prevAllScored = !!OL.turnProxy.allScored;
+          const prevKept = (OL.turnProxy.kept || []);
+          const prevJet = OL.turnProxy.lancers || 1;
+          OL.turnProxy = T.roll(OL.turnProxy);
+          // Les dés qui rapportent du jet précédent deviennent « tenus ».
+          if (prevAllScored) OL.keptByRoll = [];
+          else if (prevKept.length) OL.keptByRoll.push({ jet: prevJet, dice: prevKept });
+        }
+        // Relaie le tour courant pour que les autres voient le déroulé (dés + total).
+        olSend({ type: 'action', seq: ++OL.lastSeq, act: { type: 'turn', turn: OL.turnProxy, keptByRoll: OL.keptByRoll.slice() } });
+        break;
+      }
+      case 'orollall': {  // tout relancer (6 dés) : garde les points cumulés du tour
+        if (!OL.turnProxy) break;
+        OL.turnProxy = T.roll(OL.turnProxy, T.rollN(T.DES || 6));
+        OL.keptByRoll = [];
+        olSend({ type: 'action', seq: ++OL.lastSeq,
+          act: { type: 'turn', turn: OL.turnProxy, keptByRoll: OL.keptByRoll.slice() } });
+        break;
+      }
+      case 'ovol': {  // le joueur actif démarre un vol (relance les dés du précédent)
+        const vt = OL.g && OL.g.prevTurn;
+        if (!vt || !OL.myTurn || OL.turnProxy) break;
+        const hand = (vt.leftoverDice && vt.leftoverDice.length) ? vt.leftoverDice : undefined;
+        OL.turnProxy = T.start(T.fresh(), hand);
+        OL.keptByRoll = []; OL.stealGain = vt.gain || 0; OL.stealSource = vt.player;
+        olSend({ type: 'action', seq: ++OL.lastSeq, act: { type: 'voloff', turn: OL.turnProxy } });
+        break;
+      }
+    }
+    render();   // réaffiche immédiatement après toute action en ligne (le serveur confirmera ensuite)
+  }
+  function viewOStats() {
+    const bl = OL.stats && OL.stats.byName;
+    const bi = OL.stats && OL.stats.byId;
+    const rows = (roster.players || []).map(p => {
+      // stats par id numérique (l'historique suit l'id, pas le nom renommé)
+      let s = (typeof p.id === 'number' && bi && bi[p.id]) || (bl && bl[p.name]);
+      s = s || { games: 0, wins: 0, points: 0 };
+      const pctW = s.games ? Math.round((s.wins / s.games) * 100) : 0;
+      return `<div class="prow"><span class="avat" style="background:${p.color}">${esc((p.name[0] || '?').toUpperCase())}</span>
+        <div class="pinfo"><b>${esc(p.name)}</b>
+        <small>${s.games} partie${s.games===1?'':'s'} · ${s.wins} vi${s.wins===1?'ctoire':'ctoires'} · ${fmt(s.points)} pts · ${pctW}% vict.</small></div>
+        ${s.wins ? `<div class="pops"><span class="trophy">🏆</span></div>` : ''}</div>`;
+    }).join('');
+    const reg = (OL.stats && OL.stats.games || []).slice().reverse().map(g => {
+      const w = esc(g.players[g.winner] ? g.players[g.winner].name : '?');
+      const d = new Date(g.ts).toLocaleDateString('fr-CA', { day: 'numeric', month: 'short' });
+      const players = g.players.map(pp => `${esc(pp.name)} ${fmt(pp.score)}`).join(' · ');
+      return `<div class="dlogrow"><span class="ln">#${g.n}</span><span class="lnm">🏆 ${w}</span><span class="ls">${esc(d)} · ${players}</span></div>`;
+    }).join('');
+    return `<div class="app"><div class="setup">
+      <h1>20K <span>stats en ligne</span></h1>
+      ${OL.error ? `<div class="dmsg bad">${esc(OL.error)}</div>` : ''}
+      <p class="dsub">Statistiques consolidées sur le serveur (toutes vos parties en ligne).</p>
+      <div><h2>Par joueur du répertoire</h2><div class="plist">${rows || '<p class="dsub">Aucun joueur dans votre répertoire.</p>'}</div></div>
+      ${reg ? `<div><h2>Parties terminées en ligne</h2><div>${reg}</div></div>` : ''}
+      <button class="act slate" style="width:100%" data-a="refreshstats">Actualiser</button>
+      <button class="linkbtn" style="margin-top:10px" data-a="backdes">← Retour</button>
+      <p class="version">Version ${VERSION}</p>
+    </div></div>`;
+  }
+  function viewOJoin() {
+    // État « demande en attente » : ce device a demandé à rejoindre, l'hôte doit accepter.
+    if (OL.pendingReq) {
+      return `<div class="app"><div class="setup">
+      <h1>20K <span>en ligne</span></h1>
+      ${OL.error ? `<div class="dmsg bad">${esc(OL.error)}</div>` : ''}
+      <div class="dmsg good">⏳ Demande envoyée pour rejoindre la partie <b>${esc(OL.code)}</b>.<br>
+        En attente de l'acceptation de l'hôte…</div>
+      <button class="act slate" style="width:100%;margin-top:10px" data-a="opendingleave">← Annuler ma demande</button>
+      <div class="dsub">Ouvre cette page sur <b>l'appareil de l'hôte</b> : il verra ta demande et clique <b>Accepter</b>.</div>
+    </div></div>`;
+    }
+    return `<div class="app"><div class="setup">
+      <h1>20K <span>en ligne</span></h1>
+      ${OL.error ? `<div class="dmsg bad">${esc(OL.error)}</div>` : ''}
+      <p class="dsub">Rejoins une partie ouverte, ou crée la tienne. Un hôte doit
+        <b>accepter</b> chaque joueur qui demande à entrer.</p>
+      <div><h2>Mon joueur</h2>
+        ${roster.players.length ? `<div class="pchips">${roster.players.map(p => {
+          const on = (OL.profile && OL.profile.id != null) && (String(OL.profile.id) === String(p.id));
+          return `<button class="pchip${on ? ' on' : ''}" data-a="osetp" data-v="${esc(p.id)}" aria-pressed="${on}">
+            <span class="avat" style="background:${p.color}">${esc((p.name[0] || '?').toUpperCase())}</span>
+            <span class="pnm">${esc(p.name)}</span>
+          </button>`;
+        }).join('')}</div>
+          <button class="linkbtn" data-a="roster">Gérer les joueurs</button>`
+        : '<p class="dsub">Ajoutez d\'abord un joueur dans le répertoire (bouton ci-dessous).</p>'}
+      </div>
+      <div><h2>Parties disponibles (${OL.parties.length})</h2>
+        ${OL.parties.length
+          ? `<div class="plist">${OL.parties.map(pt => {
+              const nb = pt.nb || 1;
+              return `<div class="prow">
+                <span class="avat" style="background:${pt.color || '#1f5fd6'}">${esc((pt.host || '?')[0].toUpperCase())}</span>
+                <div class="pinfo"><b>${esc(pt.host)}</b><small>${nb} joueur${nb > 1 ? 's' : ''} · partie #${esc(pt.code)}</small></div>
+                <button class="act ok mini" data-a="ojoincode" data-v="${esc(pt.code)}" ${!olHaveProfile() ? 'disabled' : ''}>Rejoindre</button>
+              </div>`;
+            }).join('')}</div>`
+          : '<p class="dsub">Aucune partie ouverte pour le moment. Crée-en une ci-dessous.</p>'}
+        ${!olHaveProfile() ? '<p class="dsub" style="color:#c0392b">Choisissez d\'abord votre joueur ci-dessus pour rejoindre.</p>' : ''}
+      </div>
+      <div><h2>Créer une partie</h2>
+        ${!olHaveProfile() ? '<p class="dsub" style="color:#c0392b">Choisissez d\'abord votre joueur ci-dessus.</p>' : ''}
+        <button class="act ok" style="width:100%" data-a="ocreate">Créer une partie</button></div>
+      <details ${OL.showCodeInput ? 'open' : ''} style="margin-top:9px">
+        <summary data-a="ocodetoggle" style="cursor:pointer" class="linkbtn">🔑 Saisir un code à 4 chiffres</summary>
+        <div style="margin-top:7px">
+          <input type="text" id="o-code" autocomplete="off" inputmode="numeric" maxlength="4"
+            placeholder="Code à 4 chiffres" value="${esc(OL.order || '')}" style="text-align:center;letter-spacing:.2em;font:700 22px var(--num)">
+          ${olSavedRoom() ? `<button class="act ok" style="width:100%;margin-top:8px" data-a="orejoin">↺ Reprendre la partie #${esc(olSavedRoom())}</button>` : ''}
+          <button class="act slate" style="width:100%;margin-top:8px" data-a="ojoin">Rejoindre</button>
+        </div>
+      </details>
+      <button class="linkbtn" style="margin-top:10px" data-a="ostats">📊 Mes statistiques en ligne</button>
+      <button class="linkbtn" style="margin-top:6px" data-a="backdes">← Retour à l\'accueil</button>
+      <p class="version">Serveur : ${esc(ONLINE_WS_BASE)}</p>
+    </div></div>`;
+  }
+  function viewOHost() {
+    const on = OL.members.filter(m => m.online !== false);
+    const pending = (OL.pending && OL.pending.length) ? OL.pending : ((OL.g && OL.g.pending) || []);
+    return `<div class="app"><div class="setup">
+      <h1>20K <span>en ligne</span></h1>
+      <div class="rcode"><small>Code de la partie — partage-le pour que les autres rejoignent</small>
+        <b style="font-size:4.5rem;letter-spacing:.25em;display:block;margin:.2em 0">${esc(OL.code)}</b>
+        <small>Les autres : En ligne → choisissent la partie → demandent à rejoindre</small></div>
+      <div><h2>Joueurs dans la partie (${on.length})</h2>
+        <div class="plist">${OL.members.map((m, i) => orientii(m)).join('') || '<p class="dsub">En attente de joueurs…</p>'}</div>
+      </div>
+      ${pending.length ? `<div><h2>Demandes d'entrée (${pending.length})</h2>
+        <div class="plist">${pending.map(r => {
+          const marks = { 0: '👑', 1: '🎲', 2: '🎯', 3: '⭐', 4: '💠', 5: '🔥' };
+          return `<div class="prow">
+            <span class="avat" style="background:${r.color || '#7a3fc4'}">${esc((r.name || '?')[0].toUpperCase())}</span>
+            <div class="pinfo"><b>${esc(r.name)}</b><small>demande à rejoindre</small></div>
+            <button class="act ok mini" data-a="oaccept" data-v="${r.rs}">✓ Accepter</button>
+            <button class="act danger mini" data-a="orefuse" data-v="${r.rs}">✕ Refuser</button>
+          </div>`;
+        }).join('')}</div></div>` : ''}
+      ${on.length >= 2
+        ? (OL.myIndex === 0
+          ? `<button class="act ok" style="width:100%" data-a="ostart">🎲 Débuter la partie (${on.length} joueurs)</button>`
+          : '<p class="dsub">L\'hôte débutera la partie quand tout le monde est là.</p>')
+        : '<p class="dsub">Il faut au moins 2 joueurs pour commencer.</p>'}
+      <button class="linkbtn" style="margin-top:10px" data-a="oleave">Quitter la partie</button>
+    </div></div>`;
+  }
+  function orientii(m) {
+    const marks = { 0: '👑', 1: '🎲', 2: '🎯', 3: '⭐', 4: '💠', 5: '🔥' };
+    return `<div class="prow"><span class="avat" style="background:${m.color || '#5d6878'}">${esc((m.name || '?')[0].toUpperCase())}</span>
+      <div class="pinfo"><b>${marks[m.index] || '•'} ${esc(m.name)}${m.index === OL.myIndex ? ' <em>(vous)</em>' : ''}</b>
+      <small>${m.online !== false ? 'en ligne' : 'hors ligne'}</small></div></div>`;
+  }
+  function viewOGame() {
+    if (!OL.g) return `<div class="app"><div class="setup"><h1>20K <span>en ligne</span></h1><p class="dsub">Connexion…</p>
+      <button class="linkbtn" data-a="oleave">Quitter</button></div></div>`;
+    const g = OL.g;
+    const rows = g.names.map((nm, i) => {
+      const act = i === g.current && g.winner === null;
+      const won = i === g.winner;
+      const score = g.players[i] ? g.players[i].score : 0;
+      return `<section class="row${act ? ' active' : ''}${won ? ' won' : ''}" id="orow-${i}">
+        <div class="who"><div class="namewrap"><span class="dot"></span><span class="name">${esc(nm)}</span></div>
+          <div class="meta">${OL.members[i] ? (OL.members[i].online === false ? 'hors ligne' : 'en ligne') : ''}</div></div>
+        <div class="nums"><div class="num"><small>Points</small><b>${fmt(score)}</b></div>
+          <div class="num rem"><small>Restant</small><b>${won ? 'Gagnant!' : fmt(DES_TARGET - score)}</b></div></div>
+      </section>`;
+    }).join('');
+    const banner = g.winner !== null
+      ? `<div class="dmsg good">🏆 <b>${esc(g.names[g.winner])}</b> gagne la partie en ligne !</div>`
+      : (OL.myTurn
+          ? `<div class="dmsg good">🎲 C'est à <b>vous</b> : lancez les dés ci-dessous.</div>`
+          : `<div class="dmsg">🎲 Au tour de <b>${esc(g.names[g.current] || '?')}</b>…</div>`);
+    const turnArea = OL.myTurn ? viewOMyTurn() : (g.turn && g.turn.type === 'rolling' ? showOTurn(g.turn) : '');
+    const jlog = (g.log || []).slice().reverse();
+    // Bannière « tirage au sort » : affiche l'ordre de jeu décidé au démarrage, tant que la
+    // partie n'a pas de points (début). On montre dès le joueur courant.
+    let orderBanner = '';
+    const fresh = !g.players.some(p => p.score > 0);
+    if (fresh && g.order && Array.isArray(g.order)) {
+      const n = g.order.length;
+      const startSeat = (typeof g.current === 'number') ? g.current : 0;
+      const seq = [];
+      for (let k = 0; k < n; k++) {
+        const seat = (startSeat + k) % n;
+        const nm = g.names[seat] || '?';
+        seq.push((k === 0 ? '🎲 ' : '') + esc(nm) + (k === 0 ? ' (démarre)' : ''));
+      }
+      orderBanner = `<div class="dmsg" style="margin-bottom:6px"><b>Tirage au sort</b> — ordre de jeu : ${seq.join(' → ')}</div>`;
+    }
+    const showAll = OL.logAll;
+    const shown = showAll ? jlog : jlog.slice(0, 4);   // 4 derniers par défaut
+    const rowHtml = (e, i1) => {
+      const nm = esc(g.names[e.i] || '?');
+      let lab = '', cls = '';
+      if (e.kind === 'vol-attempt') { lab = 'Tentative de vol (' + (e.diceN || '?') + ' dés)'; cls = ' vol'; }
+      else if (e.kind === 'vol-fail') { lab = 'Vol raté' + (e.diceN ? ' (' + e.diceN + ' dés)' : ''); cls = ' none'; }
+      else if (e.kind === 'vol-bank') { lab = '+'+fmt(e.amount||0)+' volé' + (e.diceN ? ' (' + e.diceN + ' dés)' : ''); cls = ' vol'; }
+      else if (e.kind === 'perdu') { lab = '0'; cls = ' none'; }
+      else if (e.kind === 'trop') { lab = 'Trop'; cls = ' none'; }
+      else { lab = '+'+fmt(e.amount||0); cls = ' lv'; }
+      return `<div class="dlogrow"><span class="ln">T${jlog.length - i1}</span><span class="lnm">${nm}</span>
+        <span class="lv${cls}">${lab}</span><span class="ls">= ${fmt(e.total || 0)}</span></div>`;
+    };
+    const journal = jlog.length ? `<details class="des-log" open><summary>Journal des tours (${jlog.length})</summary>
+      ${shown.map(rowHtml).join('')}
+      ${jlog.length > 4 ? `<button class="linkbtn" style="margin:4px 0" data-a="logtoggle">${showAll ? '▲ Réduire (4 derniers)' : '▼ Voir tout (' + jlog.length + ' tours)'}</button>` : ''}</details>` : '';
+    // Fin de partie : proposer « nouvelle partie » (hôte) ou quitter.
+    const endBar = g.winner !== null
+      ? `<div class="actions" style="grid-template-columns:1fr;margin-top:10px">
+          ${OL.myIndex === 0
+            ? `<button class="act ok" data-a="orestart">♻️ Nouvelle partie (mêmes joueurs)</button>
+               <button class="act slate" style="margin-top:6px" data-a="oleave">Quitter la partie</button>`
+            : `<button class="act slate" data-a="oleave">Quitter la partie</button>`}
+        </div>` : '';
+    return `<div class="app"><div class="ogame">
+      <div class="top"><button class="tool" data-a="oleave">← Quitter</button>
+        <span class="rcode small"><b>#${esc(OL.code)}</b></span></div>
+      <h1>20K <span>en ligne</span></h1>
+      ${orderBanner}
+      ${banner}
+      ${g.winner !== null ? endBar : ''}
+      <div class="rows">${rows}</div>
+      ${g.winner !== null ? '' : turnArea}
+      ${journal}
+      <p class="version">Partie #${esc(OL.code)}</p>
+    </div></div>`;
+  }
+  function viewOMyTurn() {
+    // Le joueur actif joue son tour avec le moteur de dés local.
+    olReseat();   // s'assurer que myIndex correspond bien à notre siège avant d'afficher
+    const myScore = (OL.g && OL.g.players && OL.g.players[OL.myIndex]) ? OL.g.players[OL.myIndex].score : 0;
+    const die = (d) => d.kept ? dDie(d.v, true, jetColor(d.jet)) : dDie(d.v, false, '');
+    const inSteal = OL.stealSource >= 0;
+
+    // Pas encore lancé (idle) : proposer de voler (si éligible) ou de lancer normalement.
+    if (!OL.turnProxy) {
+      const vt = OL.g && OL.g.prevTurn;
+      const canOffer = OL.myTurn && vt && vt.gain > 0 && vt.player !== OL.g.current
+        && myScore >= T.VOL_PASSEPORT && T.canVol(myScore, vt.gain, 0, DES_TARGET);
+      const ld = vt && vt.leftoverDice;
+      const volDice = (ld && ld.length) ? ld.length : 6;
+      // Texte de l'offre réduit : on n'affiche plus le bandeau « Vol possible : partir des
+      // dés restants de X — gain Y à copier » (superflu), mais on montre le nb de dés sur
+      // le bouton « Voler Y (n dés) ».
+      return `<div class="dgrid"><div class="dgroup"><small>Prêt à lancer</small>
+        <div class="div">${[1,2,3,4,5,6].map(v => dDie(v, false, '')).join('')}</div></div></div>
+        <div class="actions" style="grid-template-columns:${canOffer ? '1fr 1fr' : '1fr'};margin-top:8px">
+          ${canOffer ? `<button class="act purple" data-a="ovol">🔓 Voler ${fmt(vt.gain)} (${volDice} dés)</button>` : ''}
+          <button class="act ok" data-a="oroll">🎲 Lancer les dés</button>
+        </div>`;
+    }
+
+    const tp = OL.turnProxy;
+    const perdu = tp.type === 'perdu';
+    const curJet = tp.lancers || 1;
+    const keptCur = (tp.kept || []);
+    const current = (tp.inHand || []).map(v => ({ v, jet: curJet, kept: keptCur.includes(v) }));
+    // Dés tenus des jets antérieurs (colorés par jet).
+    const keptHtml = (OL.keptByRoll || []).reduce((acc, g) =>
+      acc.concat((g.dice || []).map(v => ({ v, jet: g.jet, kept: true }))), []);
+    // Nombre de dés qu'on va relancer : non gardés du lancer courant, ou 6 si tout a rapporté.
+    const diceLeft = tp.allScored ? 6 : ((tp.toRoll || []).length);
+    let cells = '';
+    if (perdu) {
+      const lost = (tp.handLost || []).map(v => ({ v, jet: 0, kept: false }));
+      cells = `<div class="dgroup"><small>Lancer perdant (aucun point)</small><div class="div">${lost.map(die).join('')}</div></div>`;
+    } else {
+      const keptBlock = keptHtml.length
+        ? `<div class="dgroup"><small>Dés tenus (${keptHtml.length})</small><div class="div">${keptHtml.map(die).join('')}</div></div>` : '';
+      const sense = inSteal ? 'Vol · ' : '';
+      const comb = (tp.combinaison && tp.combinaison !== 'unités') ? ` · <b>${esc(tp.combinaison)}</b>` : '';
+      const hint = tp.allScored ? `<p class="dhint">Tous les dés ont rapporté : on relance les 6.</p>`
+        : (diceLeft > 0 ? `<p class="dhint">${fmt(diceLeft)} dé${diceLeft > 1 ? 's' : ''} à relancer</p>` : '');
+      cells = `${keptBlock}
+        <div class="dgroup"><small>${sense}Lancer n°${curJet} · ${fmt(tp.gained || 0)} points${comb}</small><div class="div">${current.map(die).join('')}</div></div>
+        ${tp.score >= 0 ? `<p class="dturn"><span class="dlab">Total du tour</span><span class="damt">${fmt(tp.score)}</span>
+          ${inSteal ? `<span class="dgain">(+ ${fmt(OL.stealGain || 0)} volés)</span>` : ''}</p>` : ''}
+        ${hint}`;
+    }
+    const restant = DES_TARGET - myScore;
+    // On ne peut pas encaisser plus que le restant (il faut atteindre 20000 pile).
+    // Si le jet dépasse, on affiche « trop » et on ne permet PAS d'encaisser (on passe).
+    const trop = !perdu && !inSteal && tp.score != null && tp.score > restant;
+    const exact = !perdu && !inSteal && tp.score === restant && restant > 0;   // tombe pile sur le restant!
+    const mustPass = perdu || trop;
+    const canBank = !mustPass && tp.score >= (inSteal ? DES_VOL_MIN_PROD : (myScore > 0 ? 1 : T.OUVRAGE));
+    const diceBadge = !perdu
+      ? `<span class="diceleft" style="color:${dieValueColor(diceLeft)};border-color:${dieValueColor(diceLeft)};background:${dieValueColor(diceLeft)}1f" title="Nombre de dés qu'on va relancer">${diceLeft} dés</span>` : '';
+    const tropMsg = trop ? `<div class="dmsg warn">⚖️ C'est trop : ${fmt(tp.score)} dépasse le restant (${fmt(restant)}). Tu ne peux pas encaisser — passe ton tour (dés perdus).</div>` : '';
+    const passerLab = trop ? `C'est trop — passer à ${esc((OL.g && OL.g.names[dNextI()]) || '')}`
+      : `Passer à ${esc((OL.g && OL.g.names[dNextI()]) || '')}`;
+    // Boutons : si l'on doit passer (perdu/trop), on ne montre PAS Relancer/Encaisser, juste « Passer ».
+    // Si l'on tombe exactement sur le restant : bouton « Encaisser et terminer la partie ! ».
+    const bar = mustPass
+      ? `<div class="actions" style="grid-template-columns:1fr;margin-top:8px">
+          <button class="act ok" data-a="olost">${passerLab}</button>
+        </div>`
+      : (exact
+          ? `<div class="actions" style="grid-template-columns:1fr;margin-top:8px">
+              <button class="act ok" data-a="obank">🏆 Encaisser et terminer la partie !</button>
+            </div>`
+          : `<div class="dice-wrap">
+              <button class="reroll" data-a="oroll" style="flex:1">🎲 Relancer</button>
+              ${(tp && (tp.kept || []).length > 0) ? `<button class="reroll" data-a="orollall" style="flex:1">♻️ Tout (6 dés)</button>` : ''}
+            </div>
+            <div class="actions" style="grid-template-columns:1fr;margin-top:8px">
+              <button class="act ok" data-a="obank" ${canBank ? '' : 'disabled'}>${inSteal ? 'Encaisser le vol' : 'Arrêter & encaisser'}</button>
+            </div>`);
+    return `<div class="dgrid">${cells}</div>
+      ${diceBadge ? `<div class="dice-wrap"><span></span>${diceBadge}</div>` : ''}
+      ${tropMsg}
+      ${bar}`;
+  }
+  function dNextI() { const n = (OL.g && OL.g.names.length) || 0; return n ? (OL.g.current + 1) % n : 0; }
+  function showOTurn(t) {
+    if (!t) return '';
+    const g = OL.g || {};
+    const who = g.names[g.current] || '';
+    const die = (d) => d.kept ? dDie(d.v, true, jetColor(d.jet)) : dDie(d.v, false, '');
+    if (t.type === 'perdu') {
+      const lost = (t.handLost || []).map(v => ({ v, jet: 0, kept: false }));
+      return `<div class="dgrid"><div class="dgroup"><small>${esc(who)} — lancer perdant (aucun point)</small><div class="div">${lost.map(die).join('')}</div></div></div>`;
+    }
+    if (t.type !== 'rolling') return '';
+    const curJet = t.lancers || 1;
+    const keptCur = (t.kept || []);
+    const current = (t.inHand || []).map(v => ({ v, jet: curJet, kept: keptCur.includes(v) }));
+    const keptHtml = (OL.keptByRoll || []).reduce((acc, gr) => acc.concat((gr.dice || []).map(v => ({ v, jet: gr.jet, kept: true }))), []);
+    const keptBlock = keptHtml.length ? `<div class="dgroup"><small>Dés tenus (${keptHtml.length})</small><div class="div">${keptHtml.map(die).join('')}</div></div>` : '';
+    const comb = (t.combinaison && t.combinaison !== 'unités') ? ` · <b>${esc(t.combinaison)}</b>` : '';
+    return `<div class="dgrid">${keptBlock}
+      <div class="dgroup"><small>${esc(who)} · lancer n°${curJet} : ${fmt(t.gained || 0)} pts${comb}</small><div class="div">${current.map(die).join('')}</div></div>
+      <p class="dturn"><span class="dlab">Total du tour</span><span class="damt">${fmt(t.score || 0)}</span></p>
+    </div>`;
+  }
+
   const root = document.getElementById('root');
   function render() {
-    root.innerHTML = (S.screen === 'setup' ? viewSetup() : viewGame()) + (sheet ? viewSheet() : '');
+    // Cette version est dédiée au jeu de dés (mode tableau retiré de l'UI) :
+    // la page principale est l'écran dés (accueil sans partie, ou jeu en cours).
+    if (!inDesMode()) { MODE = 'des'; saveMode(); if (!DS.screen) DS.screen = 'setup-des'; }
+    root.innerHTML = DS.screen === 'game-des' ? viewGameDes() : DS.screen === 'dethist' ? viewDesHist()
+    : DS.screen === 'roster' ? viewRoster()
+    : DS.screen === 'ojoin' ? viewOJoin() : DS.screen === 'host' ? viewOHost() : DS.screen === 'ogame' ? viewOGame()
+    : DS.screen === 'ostats' ? viewOStats() : viewSetupDes();
     const panel = document.getElementById('panel');
     document.documentElement.style.setProperty('--panel-h', (panel ? panel.offsetHeight : 0) + 'px');
+  }
+  function renameDes(i, name) {
+    if (i >= 0 && i < DS.names.length) { DS.names[i] = String(name == null ? '' : name); saveDes(); }
   }
   function scrollToActive() {
     const el = document.getElementById('row-' + S.current);
@@ -831,7 +3014,7 @@ h1 span{color:var(--muted);font-weight:600}
   document.addEventListener('click', e => {
     const b = e.target.closest('[data-a]');
     if (S.sound !== false) { audio(); unlockSpeech(); }
-    if (b && !b.disabled) act(b.dataset.a, b.dataset.v);
+    if (b && !b.disabled) dAct(b.dataset.a, b.dataset.v);
   });
   document.addEventListener('input', e => {
     const i = e.target.dataset && e.target.dataset.name;
@@ -839,12 +3022,24 @@ h1 span{color:var(--muted);font-weight:600}
       Object.assign(S, E.reduce(S, { type: 'rename', i: +i, name: e.target.value }).state);
       save();
     }
+    const di = e.target.dataset && e.target.dataset.dname;
+    if (di !== undefined && inDesMode()) renameDes(+di, e.target.value);
+    const pn = e.target && e.target.id === 'p-name';
+    if (pn) editingName = e.target.value.slice(0, 18);
+    const oc = e.target && e.target.id === 'o-code';
+    if (oc) OL.order = e.target.value.replace(/\D/g, '').slice(0, 4);
   });
   document.addEventListener('change', e => {
+    const pn = e.target && e.target.id === 'p-name';
+    if (pn) { editingName = e.target.value.slice(0, 18); render(); }
     const i = e.target.dataset && e.target.dataset.name;
     if (i !== undefined && !e.target.value.trim()) {
       Object.assign(S, E.reduce(S, { type: 'rename', i: +i, name: `Joueur ${+i + 1}` }).state);
       save(); render();
+    }
+    const di = e.target.dataset && e.target.dataset.dname;
+    if (di !== undefined && inDesMode() && !e.target.value.trim()) {
+      renameDes(+di, `Joueur ${+di + 1}`); render();
     }
   });
   document.addEventListener('keydown', e => {
@@ -859,7 +3054,7 @@ h1 span{color:var(--muted);font-weight:600}
   let wake = null;
   async function keepAwake() {
     try {
-      if (S.screen === 'game' && 'wakeLock' in navigator && !wake && document.visibilityState === 'visible') {
+      if ((S.screen === 'game' || DS.screen === 'game-des') && 'wakeLock' in navigator && !wake && document.visibilityState === 'visible') {
         wake = await navigator.wakeLock.request('screen');
         wake.addEventListener('release', () => { wake = null; });
       }
