@@ -886,7 +886,7 @@ h1 span{color:var(--muted);font-weight:600}
 
   const KEY = '20k-scorecard-v1';
   const KEY_DES = '20k-scorecard-v1-des';
-  const VERSION = '3.73';
+  const VERSION = '3.74';
 
   // dice-mode motors
   const D = window.DiceEngine;
@@ -1444,7 +1444,6 @@ h1 span{color:var(--muted);font-weight:600}
       case 'obank': oDo('obank'); break;
       case 'olost': oDo('olost'); break;
       case 'oroll': oDo('oroll'); break;
-      case 'orollall': oDo('orollall'); break;
       case 'ovol': oDo('ovol'); break;
       case 'ostats': oDo('ostats'); break;
       case 'refreshstats': oDo('ostats'); break;
@@ -2664,14 +2663,6 @@ function olAskStats() {
         olSend({ type: 'action', seq: ++OL.lastSeq, act: { type: 'turn', turn: OL.turnProxy, keptByRoll: OL.keptByRoll.slice() } });
         break;
       }
-      case 'orollall': {  // tout relancer (6 dés) : garde les points cumulés du tour
-        if (!OL.turnProxy) break;
-        OL.turnProxy = T.roll(OL.turnProxy, T.rollN(T.DES || 6));
-        OL.keptByRoll = [];
-        olSend({ type: 'action', seq: ++OL.lastSeq,
-          act: { type: 'turn', turn: OL.turnProxy, keptByRoll: OL.keptByRoll.slice() } });
-        break;
-      }
       case 'ovol': {  // le joueur actif démarre un vol (relance les dés du précédent)
         const vt = OL.g && OL.g.prevTurn;
         if (!vt || !OL.myTurn || OL.turnProxy) break;
@@ -2958,7 +2949,6 @@ function olAskStats() {
             </div>`
           : `<div class="dice-wrap">
               <button class="reroll" data-a="oroll" style="flex:1">🎲 Relancer</button>
-              ${(tp && (tp.kept || []).length > 0) ? `<button class="reroll" data-a="orollall" style="flex:1">♻️ Tout (6 dés)</button>` : ''}
             </div>
             <div class="actions" style="grid-template-columns:1fr;margin-top:8px">
               <button class="act ok" data-a="obank" ${canBank ? '' : 'disabled'}>${inSteal ? 'Encaisser le vol' : 'Arrêter & encaisser'}</button>

@@ -1,7 +1,7 @@
 // 20K Scorecard — offline support.
 // Page: network first (updates show up right away when online), cache as fallback.
 // Icons and fonts: cache first.
-const CACHE = '20k-v3.73';
+const CACHE = '20k-v3.74';
 const CORE = ['./', './index.html', './manifest.webmanifest',
   './icon-180.png', './icon-192.png', './icon-512.png'];
 
