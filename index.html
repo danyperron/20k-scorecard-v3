@@ -891,7 +891,7 @@ h1 span{color:var(--muted);font-weight:600}
 
   const KEY = '20k-scorecard-v1';
   const KEY_DES = '20k-scorecard-v1-des';
-  const VERSION = '3.75';
+  const VERSION = '3.76';
 
   // dice-mode motors
   const D = window.DiceEngine;
@@ -2953,7 +2953,9 @@ function olAskStats() {
       const sense = inSteal ? 'Vol · ' : '';
       const comb = (tp.combinaison && tp.combinaison !== 'unités') ? ` · <b>${esc(tp.combinaison)}</b>` : '';
       const hint = tp.allScored ? `<p class="dhint">Tous les dés ont rapporté : on relance les 6.</p>`
-        : (diceLeft > 0 ? `<p class="dhint">${fmt(diceLeft)} dé${diceLeft > 1 ? 's' : ''} à relancer</p>` : '');
+        : (myScore === 0 && tp.score >= 0 && tp.score < T.OUVRAGE
+            ? `<p class="dhint">Premier score : il faut ${fmt(T.OUVRAGE)} points pour pouvoir encaisser.</p>`
+            : (diceLeft > 0 ? `<p class="dhint">${fmt(diceLeft)} dé${diceLeft > 1 ? 's' : ''} à relancer</p>` : ''));
       cells = `${keptBlock}
         <div class="dgroup"><small>${sense}Lancer n°${curJet} · ${fmt(tp.gained || 0)} points${comb}</small><div class="div">${current.map(die).join('')}</div></div>
         ${tp.score >= 0 ? `<p class="dturn"><span class="dlab">Total du tour</span><span class="damt">${fmt(tp.score)}</span>
@@ -2982,12 +2984,16 @@ function olAskStats() {
           ? `<div class="actions" style="grid-template-columns:1fr;margin-top:8px">
               <button class="act ok" data-a="obank">🏆 Encaisser et terminer la partie !</button>
             </div>`
-          : `<div class="dice-wrap">
-              <button class="reroll" data-a="oroll" style="flex:1">🎲 Relancer</button>
-            </div>
-            <div class="actions" style="grid-template-columns:1fr;margin-top:8px">
-              <button class="act ok" data-a="obank" ${canBank ? '' : 'disabled'}>${inSteal ? 'Encaisser le vol' : 'Arrêter & encaisser'}</button>
-            </div>`);
+          : `${canBank
+            ? `<div class="dice-wrap">
+                <button class="reroll" data-a="oroll" style="flex:1">🎲 Relancer</button>
+              </div>
+              <div class="actions" style="grid-template-columns:1fr;margin-top:8px">
+                <button class="act ok" data-a="obank">${inSteal ? 'Encaisser le vol' : 'Arrêter & encaisser'}</button>
+              </div>`
+            : `<div class="dice-wrap">
+                <button class="reroll" data-a="oroll" style="flex:1">🎲 Relancer</button>
+              </div>`}`);
     return `<div class="dgrid">${cells}</div>
       ${diceBadge ? `<div class="dice-wrap"><span></span>${diceBadge}</div>` : ''}
       ${tropMsg}
