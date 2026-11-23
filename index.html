@@ -256,6 +256,11 @@ h1 span{color:var(--muted);font-weight:600}
 .mini{width:30px;height:30px;border-radius:9px;border:1px solid var(--line);background:var(--surface-2);color:var(--fg);
   font-weight:700;font-size:14px;display:inline-flex;align-items:center;justify-content:center}
 .mini.danger{color:var(--bad)}
+.abtn{min-height:44px;border-radius:11px;border:0;font-weight:700;font-size:15px;padding:0 14px;flex:1;
+  display:inline-flex;align-items:center;justify-content:center;box-shadow:0 2px 0 var(--shadow);cursor:pointer}
+.abtn.ok{background:var(--ok,#16833c);color:var(--on-strong)}
+.abtn.danger{background:var(--bad,#c9302c);color:#fff}
+.abtn.ok:active,.abtn.danger:active{transform:scale(.98)}
 .plist{margin:4px 0}
 .peditor{border:1px dashed var(--accent);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:12px;background:var(--accent-soft)}
 .peditor input{height:44px;border-radius:10px;border:1.5px solid var(--line);background:var(--surface);color:var(--fg);
@@ -886,7 +891,7 @@ h1 span{color:var(--muted);font-weight:600}
 
   const KEY = '20k-scorecard-v1';
   const KEY_DES = '20k-scorecard-v1-des';
-  const VERSION = '3.74';
+  const VERSION = '3.75';
 
   // dice-mode motors
   const D = window.DiceEngine;
@@ -1447,6 +1452,8 @@ h1 span{color:var(--muted);font-weight:600}
       case 'ovol': oDo('ovol'); break;
       case 'ostats': oDo('ostats'); break;
       case 'refreshstats': oDo('ostats'); break;
+      case 'odetail': oDo('odetail', v); break;
+      case 'ostatsback': oDo('ostatsback', v); break;
       case 'logtoggle': oDo('logtoggle'); break;
       case 'oinput': oDo('oinput', v); break;
       case 'osetp': oDo('osetp', v); break;
@@ -2015,10 +2022,11 @@ h1 span{color:var(--muted);font-weight:600}
     } else {
       const chips = roster.players.map(p => {
         const on = sel.includes(p.id);
+        const st = playerStats(p);
         return `<button class="pchip${on ? ' on' : ''}" data-a="togsel" data-v="${esc(p.id)}" aria-pressed="${on}">
           <span class="avat" style="background:${p.color}">${esc((p.name[0] || '?').toUpperCase())}</span>
           <span class="pnm">${esc(p.name)}</span>
-          <span class="pstat">${p.stats.wins} 🏆 · ${p.stats.points ? fmt(p.stats.points) : 0} pts</span>
+          <span class="pstat">${st.wins} 🏆 · ${st.points ? fmt(st.points) : 0} pts</span>
         </button>`;
       }).join('');
       playersHtml = `<div class="pchips">${chips}</div>
@@ -2058,16 +2066,19 @@ h1 span{color:var(--muted);font-weight:600}
   }
 
   function viewRoster() {
-    const row = p => `<div class="prow">
+    const row = p => {
+      const st = playerStats(p);
+      return `<div class="prow">
         <span class="avat" style="background:${p.color}">${esc((p.name[0] || '?').toUpperCase())}</span>
         <div class="pinfo"><b>${esc(p.name)}</b>
-          <small>${p.stats.games} partie${p.stats.games===1?'':'s'} · ${p.stats.wins} vi${p.stats.wins===1?'ctoire':'ctoires'} · ${fmt(p.stats.points)} pts cumulés</small></div>
+          <small>${st.games} partie${st.games===1?'':'s'} · ${st.wins} vi${st.wins===1?'ctoire':'ctoires'} · ${fmt(st.points)} pts cumulés</small></div>
         <div class="pops">
-          ${p.stats.wins ? `<span class="trophy">🏆</span>` : ''}
+          ${st.wins ? `<span class="trophy">🏆</span>` : ''}
           <button class="mini" data-a="pedit" data-v="${esc(p.id)}">✎</button>
           <button class="mini danger" data-a="pdel" data-v="${esc(p.id)}">✕</button>
         </div>
       </div>`;
+    };
     const editor = editingPlayer !== null ? editorForm() : '';
     return `<div class="app"><div class="setup">
       <h1>Joueurs <span>du répertoire</span></h1>
@@ -2220,7 +2231,7 @@ h1 span{color:var(--muted);font-weight:600}
     order: '', stealGain: 0, keptByRoll: [], leaving: false, profile: null, stealSource: -1,
     logAll: false,
     stats: { byName: {}, byId: {}, games: [] },
-    parties: [], pendingReq: false, showCodeInput: false, pending: []
+    parties: [], pendingReq: false, showCodeInput: false, pending: [], statsDetail: -1
   };
   function olSend(o) { if (OL.ws && OL.ws.readyState === 1) OL.ws.send(JSON.stringify(o)); }
   function olLog(m) {}
@@ -2528,6 +2539,14 @@ function olAskStats() {
   }
   olSend({ type: 'getStats', names, ids: ids.length ? ids : undefined });
 }
+  // Stats effectives d'un joueur : on privilégie le serveur (`OL.stats` = toutes les
+  // parties en ligne consolidées), sinon on retombe sur les stats locales du répertoire.
+  function playerStats(p) {
+    const bl = OL.stats && OL.stats.byName;
+    const bi = OL.stats && OL.stats.byId;
+    const srv = (typeof p.id === 'number' && bi && bi[p.id]) || (bl && bl[p.name]) || null;
+    return srv || (p.stats || { games: 0, wins: 0, points: 0 });
+  }
   // Récupère la liste des parties OUVERTES (via HTTP GET /parties, comme le worker CF).
   // En dev, repli WebSocket « getParties » si le fetch échoue.
   function olFetchParties() {
@@ -2626,6 +2645,8 @@ function olAskStats() {
         olSend({ type: 'action', seq: ++OL.lastSeq, act: { type: 'restart' } });
         break; }
       case 'ostats': DS.screen = 'ostats'; OL.error = ''; olEnsureConn(); break;
+      case 'odetail': OL.statsDetail = Number(v == null ? -1 : v); render(); break;   // détail lecture seule d'une partie
+      case 'ostatsback': OL.statsDetail = -1; render(); break;
       case 'osetp': { const p = findPlayer(String(v)); olSetProfile(p); render(); break; }
       case 'obank': {  // le joueur actif encaisse depuis son tour local (normal ou vol)
         const t = OL.turnProxy;
@@ -2676,6 +2697,27 @@ function olAskStats() {
     render();   // réaffiche immédiatement après toute action en ligne (le serveur confirmera ensuite)
   }
   function viewOStats() {
+    const games = (OL.stats && OL.stats.games) || [];
+    // Détail lecture seule d'une partie terminée (clic sur une ligne ci-dessous).
+    if (OL.statsDetail >= 0 && games[OL.statsDetail]) {
+      const g = games[OL.statsDetail];
+      const winName = g.players[g.winner] ? g.players[g.winner].name : '?';
+      const date = new Date(g.ts).toLocaleDateString('fr-CA', { day: 'numeric', month: 'long', year: 'numeric' });
+      const rows = g.players.map(pp => {
+        const won = pp === g.players[g.winner];
+        return `<div class="prow"><span class="avat" style="background:${won ? '#c9a227' : '#5d6878'}">${esc((pp.name[0] || '?').toUpperCase())}</span>
+          <div class="pinfo"><b>${esc(pp.name)}${won ? ' <em>(gagnant)</em>' : ''}</b>
+          <small>${fmt(pp.score)} points${won ? ' 🏆' : ''}</small></div></div>`;
+      }).join('');
+      return `<div class="app"><div class="setup">
+        <div class="top"><button class="tool" data-a="ostatsback">← Retour</button></div>
+        <h1>Partie <span>terminée</span></h1>
+        <div class="dmsg good">🏆 <b>${esc(winName)}</b> gagne la partie du <b>${esc(date)}</b></div>
+        <h2>Scores finaux</h2><div class="plist">${rows}</div>
+        <p class="dsub">Lecture seule (les parties se rejouent en ligne).</p>
+        <button class="act slate" style="width:100%" data-a="ostatsback">← Retour aux statistiques</button>
+      </div></div>`;
+    }
     const bl = OL.stats && OL.stats.byName;
     const bi = OL.stats && OL.stats.byId;
     const rows = (roster.players || []).map(p => {
@@ -2688,18 +2730,20 @@ function olAskStats() {
         <small>${s.games} partie${s.games===1?'':'s'} · ${s.wins} vi${s.wins===1?'ctoire':'ctoires'} · ${fmt(s.points)} pts · ${pctW}% vict.</small></div>
         ${s.wins ? `<div class="pops"><span class="trophy">🏆</span></div>` : ''}</div>`;
     }).join('');
-    const reg = (OL.stats && OL.stats.games || []).slice().reverse().map(g => {
+    // Lignes cliquables -> détail lecture seule (on garde l'index d'origine dans games).
+    const reg = games.map((g, idx) => {
       const w = esc(g.players[g.winner] ? g.players[g.winner].name : '?');
       const d = new Date(g.ts).toLocaleDateString('fr-CA', { day: 'numeric', month: 'short' });
       const players = g.players.map(pp => `${esc(pp.name)} ${fmt(pp.score)}`).join(' · ');
-      return `<div class="dlogrow"><span class="ln">#${g.n}</span><span class="lnm">🏆 ${w}</span><span class="ls">${esc(d)} · ${players}</span></div>`;
+      return `<button class="pastrow" data-a="odetail" data-v="${idx}">
+        <span class="rt"><b>🏆 ${w}</b><small>${esc(d)} · ${players} — voir le détail</small></span>${ICON.chev}</button>`;
     }).join('');
     return `<div class="app"><div class="setup">
       <h1>20K <span>stats en ligne</span></h1>
       ${OL.error ? `<div class="dmsg bad">${esc(OL.error)}</div>` : ''}
       <p class="dsub">Statistiques consolidées sur le serveur (toutes vos parties en ligne).</p>
       <div><h2>Par joueur du répertoire</h2><div class="plist">${rows || '<p class="dsub">Aucun joueur dans votre répertoire.</p>'}</div></div>
-      ${reg ? `<div><h2>Parties terminées en ligne</h2><div>${reg}</div></div>` : ''}
+      ${reg ? `<div class="past"><h2>Parties terminées en ligne</h2><div>${reg}</div></div>` : ''}
       <button class="act slate" style="width:100%" data-a="refreshstats">Actualiser</button>
       <button class="linkbtn" style="margin-top:10px" data-a="backdes">← Retour</button>
       <p class="version">Version ${VERSION}</p>
@@ -2749,15 +2793,6 @@ function olAskStats() {
       <div><h2>Créer une partie</h2>
         ${!olHaveProfile() ? '<p class="dsub" style="color:#c0392b">Choisissez d\'abord votre joueur ci-dessus.</p>' : ''}
         <button class="act ok" style="width:100%" data-a="ocreate">Créer une partie</button></div>
-      <details ${OL.showCodeInput ? 'open' : ''} style="margin-top:9px">
-        <summary data-a="ocodetoggle" style="cursor:pointer" class="linkbtn">🔑 Saisir un code à 4 chiffres</summary>
-        <div style="margin-top:7px">
-          <input type="text" id="o-code" autocomplete="off" inputmode="numeric" maxlength="4"
-            placeholder="Code à 4 chiffres" value="${esc(OL.order || '')}" style="text-align:center;letter-spacing:.2em;font:700 22px var(--num)">
-          ${olSavedRoom() ? `<button class="act ok" style="width:100%;margin-top:8px" data-a="orejoin">↺ Reprendre la partie #${esc(olSavedRoom())}</button>` : ''}
-          <button class="act slate" style="width:100%;margin-top:8px" data-a="ojoin">Rejoindre</button>
-        </div>
-      </details>
       <button class="linkbtn" style="margin-top:10px" data-a="ostats">📊 Mes statistiques en ligne</button>
       <button class="linkbtn" style="margin-top:6px" data-a="backdes">← Retour à l\'accueil</button>
       <p class="version">Serveur : ${esc(ONLINE_WS_BASE)}</p>
@@ -2780,8 +2815,8 @@ function olAskStats() {
           return `<div class="prow">
             <span class="avat" style="background:${r.color || '#7a3fc4'}">${esc((r.name || '?')[0].toUpperCase())}</span>
             <div class="pinfo"><b>${esc(r.name)}</b><small>demande à rejoindre</small></div>
-            <button class="act ok mini" data-a="oaccept" data-v="${r.rs}">✓ Accepter</button>
-            <button class="act danger mini" data-a="orefuse" data-v="${r.rs}">✕ Refuser</button>
+            <button class="abtn ok" data-a="oaccept" data-v="${r.rs}">✓ Accepter</button>
+            <button class="abtn danger" data-a="orefuse" data-v="${r.rs}">✕ Refuser</button>
           </div>`;
         }).join('')}</div></div>` : ''}
       ${on.length >= 2
@@ -3058,6 +3093,12 @@ function olAskStats() {
   }
 
   render();
+  // Synchronise en arrière-plan le répertoire partagé + stats serveur : ainsi TOUS les
+  // joueurs (y compris ceux créés sur d'autres appareils) apparaissent dès le 1er affichage,
+  // sans avoir à ouvrir la « Gestion des joueurs ».
+  try {
+    if ((typeof OL !== 'undefined') && (typeof olEnsureConn === 'function')) setTimeout(olEnsureConn, 400);
+  } catch (e) {}
   keepAwake();
 })();
 
