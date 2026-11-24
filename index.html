@@ -891,7 +891,7 @@ h1 span{color:var(--muted);font-weight:600}
 
   const KEY = '20k-scorecard-v1';
   const KEY_DES = '20k-scorecard-v1-des';
-  const VERSION = '3.77';
+  const VERSION = '3.78';
 
   // dice-mode motors
   const D = window.DiceEngine;
@@ -2611,10 +2611,25 @@ function olAskStats() {
   // Stats effectives d'un joueur : on privilégie le serveur (`OL.stats` = toutes les
   // parties en ligne consolidées), sinon on retombe sur les stats locales du répertoire.
   function playerStats(p) {
+    return olPlayerStat(p) || (p.stats || { games: 0, wins: 0, points: 0 });
+  }
+  // Stats effective d'un joueur : on privilégie le serveur (`byId` quand il a des données
+  // réelles — l'historique suit l'id numérique — sinon `byName`). Un byId vide (0/0/0)
+  // ne doit JAMAIS masquer les vrais totaux du byName : anciennes parties enregistrées par
+  // nom avant l'existence du pid → repli sur byName qui les détient.
+  function olPlayerStat(p) {
     const bl = OL.stats && OL.stats.byName;
     const bi = OL.stats && OL.stats.byId;
-    const srv = (typeof p.id === 'number' && bi && bi[p.id]) || (bl && bl[p.name]) || null;
-    return srv || (p.stats || { games: 0, wins: 0, points: 0 });
+    const has = s => s && (s.games > 0 || s.wins > 0 || s.points > 0);
+    if (typeof p.id === 'number' && bi) {
+      const byId = bi[p.id];
+      if (has(byId)) return byId;             // byId remplit -> l'historique suit l'id
+    }
+    if (bl) {
+      const byName = bl[p.name];
+      if (has(byName)) return byName;         // repli sur le nom (parties pré-pid)
+    }
+    return null;
   }
   // Récupère la liste des parties OUVERTES (via HTTP GET /parties, comme le worker CF).
   // En dev, repli WebSocket « getParties » si le fetch échoue.
@@ -2796,8 +2811,8 @@ function olAskStats() {
     const bl = OL.stats && OL.stats.byName;
     const bi = OL.stats && OL.stats.byId;
     const rows = (roster.players || []).map(p => {
-      // stats par id numérique (l'historique suit l'id, pas le nom renommé)
-      let s = (typeof p.id === 'number' && bi && bi[p.id]) || (bl && bl[p.name]);
+      // Stats : privilégie byId quand il a des données, sinon byName (parties pré-pid).
+      let s = olPlayerStat(p);
       s = s || { games: 0, wins: 0, points: 0 };
       const pctW = s.games ? Math.round((s.wins / s.games) * 100) : 0;
       return `<div class="prow"><span class="avat" style="background:${p.color}">${esc((p.name[0] || '?').toUpperCase())}</span>
