@@ -901,7 +901,7 @@ h1 span{color:var(--muted);font-weight:600}
 
   const KEY = '20k-scorecard-v1';
   const KEY_DES = '20k-scorecard-v1-des';
-  const VERSION = '3.79';
+  const VERSION = '3.80';
 
   // dice-mode motors
   const D = window.DiceEngine;
@@ -2804,16 +2804,38 @@ function olAskStats() {
     }
     render();   // réaffiche immédiatement après toute action en ligne (le serveur confirmera ensuite)
   }
-  function viewOStats() {
+  // Rend la liste complète des entrées du journal de tours d'une partie terminée
+  // (pour l'écran des stats), dans l'ordre chronologique du déroulé.
+  function olLogRowsHtml(log, names) {
+    const jlog = (log || []).slice();
+    if (!jlog.length) return '';
+    // i de chaque entrée est un index de siège ; names[i] = nom du joueur.
+    return jlog.map((e, i1) => {
+      const playedName = names[e.i] || '?';
+      let lab = '', cls = '';
+      if (e.kind === 'vol-attempt') { lab = 'Tentative de vol (' + (e.diceN || '?') + ' dés)'; cls = ' vol'; }
+      else if (e.kind === 'vol-fail') { lab = 'Vol raté' + (e.diceN ? ' (' + e.diceN + ' dés)' : ''); cls = ' none'; }
+      else if (e.kind === 'vol-bank') { lab = '+'+fmt(e.amount||0)+' volé' + (e.diceN ? ' (' + e.diceN + ' dés)' : ''); cls = ' vol'; }
+      else if (e.kind === 'perdu') { lab = '0'; cls = ' none'; }
+      else if (e.kind === 'trop') { lab = 'Trop'; cls = ' none'; }
+      else { lab = '+'+fmt(e.amount||0); cls = ' lv'; }
+      return `<div class="dlogrow"><span class="ln">T${i1 + 1}</span><span class="lnm">${esc(playedName)}</span>
+        <span class="lv${cls}">${lab}</span><span class="ls">= ${fmt(e.total || 0)}</span></div>`;
+    }).join('');
+  }
+
+function viewOStats() {
     const games = (OL.stats && OL.stats.games) || [];
+    // Le registre serveur est chronologique (croissant) ; on affiche le PLUS RÉCENT d'abord.
+    const sortedGames = games.slice().reverse();
     // --- Détail des stats d'UN joueur (clic sur son nom dans le répertoire) ---
     if (OL.playerDetail >= 0 && roster.players && roster.players[OL.playerDetail]) {
       const p = roster.players[OL.playerDetail];
       const s = olPlayerStat(p) || { games: 0, wins: 0, points: 0 };
       const pctW = s.games ? Math.round((s.wins / s.games) * 100) : 0;
       const avg = s.games ? Math.round(s.points / s.games) : 0;
-      // Les parties TERMINÉES affichées où ce joueur est passé (par nom).
-      const mine = games.filter(g => (g.players || []).some(pp => String(pp.name).toLowerCase() === String(p.name).toLowerCase()));
+      // Les parties TERMINÉES affichées où ce joueur est passé (par nom), plus récentes d'abord.
+      const mine = games.filter(g => (g.players || []).some(pp => String(pp.name).toLowerCase() === String(p.name).toLowerCase())).reverse();
       const rowsDone = mine.length ? mine.map(g => {
         const w = g.players[g.winner];
         const wName = w ? w.name : '?';
@@ -2839,9 +2861,10 @@ function olAskStats() {
       </div></div>`;
     }
     // Détail lecture seule d'une partie terminée (clic sur une ligne ci-dessous).
-    if (OL.statsDetail >= 0 && games[OL.statsDetail]) {
-      const g = games[OL.statsDetail];
-      const winName = g.players[g.winner] ? g.players[g.winner].name : '?';
+    if (OL.statsDetail >= 0 && sortedGames[OL.statsDetail]) {
+      const g = sortedGames[OL.statsDetail];
+      const names = (g.players || []).map(pp => pp.name);
+      const winName = (g.players && g.players[g.winner]) ? g.players[g.winner].name : '?';
       const date = new Date(g.ts).toLocaleDateString('fr-CA', { day: 'numeric', month: 'long', year: 'numeric' });
       const rows = g.players.map(pp => {
         const won = pp === g.players[g.winner];
@@ -2849,12 +2872,13 @@ function olAskStats() {
           <div class="pinfo"><b>${esc(pp.name)}${won ? ' <em>(gagnant)</em>' : ''}</b>
           <small>${fmt(pp.score)} points${won ? ' 🏆' : ''}</small></div></div>`;
       }).join('');
+      const jlog = olLogRowsHtml(g.log, names);
       return `<div class="app"><div class="setup">
         <div class="top"><button class="tool" data-a="ostatsback">← Retour</button></div>
         <h1>Partie <span>terminée</span></h1>
         <div class="dmsg good">🏆 <b>${esc(winName)}</b> gagne la partie du <b>${esc(date)}</b></div>
         <h2>Scores finaux</h2><div class="plist">${rows}</div>
-        <p class="dsub">Lecture seule (les parties se rejouent en ligne).</p>
+        ${jlog ? `<details class="des-log" open><summary>Tous les tours (${(g.log || []).length})</summary><div>${jlog}</div></details>` : '<p class="dsub">Aucun journal de tours enregistré pour cette partie (ancienne version).</p>'}
         <button class="act slate" style="width:100%" data-a="ostatsback">← Retour aux statistiques</button>
       </div></div>`;
     }
@@ -2871,13 +2895,14 @@ function olAskStats() {
         <small>${s.games} partie${s.games===1?'':'s'} · ${s.wins} vi${s.wins===1?'ctoire':'ctoires'} · ${fmt(s.points)} pts · ${pctW}% vict. — détail</small></span>
         ${s.wins ? `<span class="pops"><span class="trophy">🏆</span></span>` : ''}${ICON.chev}</button>`;
     }).join('');
-    // Lignes cliquables -> détail lecture seule (on garde l'index d'origine dans games).
-    const reg = games.map((g, idx) => {
-      const w = esc(g.players[g.winner] ? g.players[g.winner].name : '?');
+    // Lignes cliquables -> détail lecture seule (plus récent d'abord, index dans sortedGames).
+    const reg = sortedGames.map((g, idx) => {
+      const w = esc((g.players && g.players[g.winner]) ? g.players[g.winner].name : '?');
       const d = new Date(g.ts).toLocaleDateString('fr-CA', { day: 'numeric', month: 'short' });
       const players = g.players.map(pp => `${esc(pp.name)} ${fmt(pp.score)}`).join(' · ');
+      const nbT = (g.log || []).length;
       return `<button class="pastrow" data-a="odetail" data-v="${idx}">
-        <span class="rt"><b>🏆 ${w}</b><small>${esc(d)} · ${players} — voir le détail</small></span>${ICON.chev}</button>`;
+        <span class="rt"><b>🏆 ${w}</b><small>${esc(d)} · ${players}${nbT ? ` · ${nbT} tours` : ''} — voir le détail</small></span>${ICON.chev}</button>`;
     }).join('');
     return `<div class="app"><div class="setup">
       <h1>20K <span>stats en ligne</span></h1>
