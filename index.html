@@ -891,7 +891,7 @@ h1 span{color:var(--muted);font-weight:600}
 
   const KEY = '20k-scorecard-v1';
   const KEY_DES = '20k-scorecard-v1-des';
-  const VERSION = '3.76';
+  const VERSION = '3.77';
 
   // dice-mode motors
   const D = window.DiceEngine;
@@ -2231,7 +2231,10 @@ h1 span{color:var(--muted);font-weight:600}
     order: '', stealGain: 0, keptByRoll: [], leaving: false, profile: null, stealSource: -1,
     logAll: false,
     stats: { byName: {}, byId: {}, games: [] },
-    parties: [], pendingReq: false, showCodeInput: false, pending: [], statsDetail: -1
+    parties: [], pendingReq: false, showCodeInput: false, pending: [], statsDetail: -1,
+    // Reconnexion automatique d'une partie en cours : rc.{active, attempts, timer, code}.
+    // active=true et screen resté sur ogame/host pendant que le socket revient.
+    rc: { active: false, attempts: 0, timer: 0, code: '' }
   };
   function olSend(o) { if (OL.ws && OL.ws.readyState === 1) OL.ws.send(JSON.stringify(o)); }
   function olLog(m) {}
@@ -2277,6 +2280,56 @@ h1 span{color:var(--muted);font-weight:600}
       if (p) OL.profile = { id: p.id, name: p.name };
     } catch (e) {}
   }
+  // ---- Reconnexion automatique d'une partie en cours -------------------------
+  // Si la connexion WebSocket tombe (réseau, mobile, relance du worker), on tente de
+  // rouvrir automatiquement la MÊME salle (code mémorisé) avec la même identité
+  // (clientId + profil). Le serveur (Durable Object) garde le siège par clientId, donc
+  // le joueur retrouve sa place et l'état de la partie. Backoff progressif (1s→6s,
+  // ~12 tentatives ≈ 40 s) puis repli sur le bouton « Reprendre » existant.
+  function olCanReconnect() {
+    if (OL.leaving || OL.rc.active) return false;
+    const code = olSavedRoom();
+    if (!code) return false;
+    if (!olProfile()) return false;
+    // On ne tente un retour automatique que si on était réellement dans une salle.
+    return (DS.screen === 'ogame' || DS.screen === 'host') && OL.rc.attempts < 12;
+  }
+  function olReconnectDelay() {
+    // backoff : 1000, 1500, 2000, 3000, 4500, 6000 (puis plafonne à 6000)
+    const d = Math.min(6000, 1000 * Math.pow(1.5, OL.rc.attempts));
+    return d;
+  }
+  function olStartReconnect() {
+    if (OL.rc.active) return;
+    OL.rc.active = true;
+    OL.rc.attempts = 0;
+    OL.rc.code = olSavedRoom();
+    OL.error = '';              // ne plus afficher l'erreur « interrompue » pendant la reconnexion
+    if (OL.rc.timer) { clearTimeout(OL.rc.timer); OL.rc.timer = 0; }
+    OL.rc.timer = setTimeout(olReconnectTick, 600);
+    render();                   // affiche la bannière « Reconnexion… »
+  }
+  function olReconnectTick() {
+    OL.rc.attempts++;
+    if (OL.leaving) { olStopReconnect(); return; }
+    if (OL.connected) { olStopReconnect(); return; }   // déjà revenu entre-temps
+    if (OL.rc.attempts > 12) { olStopReconnect(); OL.error = 'Connexion perdue. Reprenez la partie ci-dessous.'; render(); return; }
+    // Ré-ouvre la même salle (join) : le DO rend le siège, l'état arrive via 'state'.
+    // Si cette tentative échoue, le onclose de olConnect relancera olReconnectTick (>délai).
+    OL.order = OL.rc.code;
+    olConnect('join');
+  }
+  function olStopReconnect() {
+    OL.rc.active = false;
+    OL.rc.code = '';
+    if (OL.rc.timer) { clearTimeout(OL.rc.timer); OL.rc.timer = 0; }
+  }
+  // Action de jeu bloquée pendant une coupure : on garde le tour local mais on n'envoie
+  // rien (pour ne pas perdre l'action) et on affiche une bannière « en reconnexion ».
+  function olBlockedAction() {
+    if (!OL.error) OL.error = 'Reconnexion en cours… Votre action est conservée et sera prise en compte dès le retour.';
+    render();
+  }
   function olConnect(action) {
     // Si un ancien WebSocket est déjà ouvert (ex. connexion d'arrière-plan depuis
     // l'écran répertoire/stats via /room/m), on le ferme AVANT de créer/rejoindre une
@@ -2295,6 +2348,7 @@ h1 span{color:var(--muted);font-weight:600}
     OL.ws = conn;
     conn.onopen = () => {
       OL.connected = true;
+      if (OL.rc.active) { olStopReconnect(); OL.error = ''; }   // reconnexion réussie : on s'arrête
       olInitProfile();   // restaurer l'identité « Mon joueur » mémorisée (reprise)
       const who = olMyName();
       const color = olMyColor();
@@ -2308,7 +2362,21 @@ h1 span{color:var(--muted);font-weight:600}
     };
     conn.onmessage = e => { try { olHandle(JSON.parse(e.data)); } catch (err) {} };
     conn.onclose = () => { OL.connected = false; OL.ws = null;
-      if (!OL.leaving && !OL.keepError) {
+      // Reconnexion automatique : c'est la première chute, on lance le retour auto de la
+      // salle en cours (code mémorisé + même identité). Seulement si on était bien dans un
+      // salon (pas un départ volontaire, pas une erreur « garde ce message », code dispo).
+      if (!OL.leaving && !OL.keepError && olCanReconnect()) {
+        olStartReconnect();
+      } else if (OL.rc.active && !OL.leaving && !OL.keepError) {
+        // On était DÉJÀ en reconnexion : cette tentative a échoué.
+        if (OL.rc.timer) { clearTimeout(OL.rc.timer); OL.rc.timer = 0; }
+        if (OL.rc.attempts < 12) {
+          OL.rc.timer = setTimeout(olReconnectTick, olReconnectDelay());   // on retente avec backoff
+        } else {
+          olStopReconnect();   // plafond atteint : on abandonne, bouton « Reprendre » en repli
+          OL.error = 'Connexion perdue. Reprenez la partie ci-dessous.';
+        }
+      } else if (!OL.leaving && !OL.keepError) {
         const saved = olSavedRoom();
         OL.error = saved
           ? 'Connexion interrompue. La partie se reprend avec le code ' + saved + ' (bouton « Reprendre » ci-dessous).'
@@ -2318,7 +2386,7 @@ h1 span{color:var(--muted);font-weight:600}
       OL.leaving = false;
       olStopRosterPoll();
       render(); };
-    conn.onerror = () => { OL.error = 'Connexion au serveur impossible.'; render(); };
+    conn.onerror = () => { if (!OL.rc.active) OL.error = 'Connexion au serveur impossible.'; render(); };
   }
   function olMyName() {
     const p = olProfile();
@@ -2477,6 +2545,7 @@ h1 span{color:var(--muted);font-weight:600}
     try { if (OL.ws) OL.ws.close(); } catch (e) {}
     OL.ws = null; OL.connected = false; OL.myIndex = -1; OL.code = ''; OL.members = [];
     OL.g = null; OL.myTurn = false; OL.turnProxy = null; OL.leaving = false;
+    olStopReconnect();
     olStopRosterPoll();
     olStopPartyPoll();
     olClearRoom();
@@ -2636,11 +2705,13 @@ function olAskStats() {
       case 'oleave': olDisconnect(); olStopPartyPoll(); DS.screen = 'setup-des'; break;
       case 'ostart': {  // l'hôte démarre la partie depuis le lobby
         if (OL.myIndex !== 0) break;
+        if (!OL.connected) olBlockedAction(); break;
         OL.error = '';
         olSend({ type: 'action', seq: ++OL.lastSeq, act: { type: 'start' } });
         break; }
       case 'orestart': {  // nouvelle partie avec les mêmes joueurs (tirage au sort)
         if (OL.myIndex !== 0) break;
+        if (!OL.connected) olBlockedAction(); break;
         OL.error = '';
         olSend({ type: 'action', seq: ++OL.lastSeq, act: { type: 'restart' } });
         break; }
@@ -2651,6 +2722,7 @@ function olAskStats() {
       case 'obank': {  // le joueur actif encaisse depuis son tour local (normal ou vol)
         const t = OL.turnProxy;
         if (!t || !OL.myTurn) break;
+        if (!OL.connected) { olBlockedAction(); break; }
         const isSteal = OL.stealSource >= 0;
         OL.turnProxy = null;
         const totalDice = (t.kept || []).length + (t.toRoll || []).length;
@@ -2662,6 +2734,7 @@ function olAskStats() {
       }
       case 'olost': {  // le joueur actif perd son tour
         const tl = OL.turnProxy;
+        if (!OL.connected) { olBlockedAction(); break; }
         OL.turnProxy = null;
         olSend({ type: 'action', seq: ++OL.lastSeq,
           act: { type: 'lost', diceUsed: tl ? ((tl.kept || []).length + (tl.toRoll || []).length) : 0 } });
@@ -2669,6 +2742,7 @@ function olAskStats() {
         break;
       }
       case 'oroll': {  // le joueur actif lance / relance ses dés localement
+        if (!OL.connected) { olBlockedAction(); break; }
         let prev;
         if (!OL.turnProxy) { OL.turnProxy = T.start(T.fresh()); OL.keptByRoll = []; }
         else {
@@ -2687,6 +2761,7 @@ function olAskStats() {
       case 'ovol': {  // le joueur actif démarre un vol (relance les dés du précédent)
         const vt = OL.g && OL.g.prevTurn;
         if (!vt || !OL.myTurn || OL.turnProxy) break;
+        if (!OL.connected) { olBlockedAction(); break; }
         const hand = (vt.leftoverDice && vt.leftoverDice.length) ? vt.leftoverDice : undefined;
         OL.turnProxy = T.start(T.fresh(), hand);
         OL.keptByRoll = []; OL.stealGain = vt.gain || 0; OL.stealSource = vt.player;
@@ -2803,6 +2878,7 @@ function olAskStats() {
     const pending = (OL.pending && OL.pending.length) ? OL.pending : ((OL.g && OL.g.pending) || []);
     return `<div class="app"><div class="setup">
       <h1>20K <span>en ligne</span></h1>
+      ${olReconnectingBanner()}
       <div class="rcode"><small>Code de la partie — partage-le pour que les autres rejoignent</small>
         <b style="font-size:4.5rem;letter-spacing:.25em;display:block;margin:.2em 0">${esc(OL.code)}</b>
         <small>Les autres : En ligne → choisissent la partie → demandent à rejoindre</small></div>
@@ -2832,6 +2908,15 @@ function olAskStats() {
     return `<div class="prow"><span class="avat" style="background:${m.color || '#5d6878'}">${esc((m.name || '?')[0].toUpperCase())}</span>
       <div class="pinfo"><b>${marks[m.index] || '•'} ${esc(m.name)}${m.index === OL.myIndex ? ' <em>(vous)</em>' : ''}</b>
       <small>${m.online !== false ? 'en ligne' : 'hors ligne'}</small></div></div>`;
+  }
+  // Bannière d'état de connexion (coupure + reconnexion automatique). Affiche un encart
+  // bien visible pendant que le socket revient ; une fois les tentatives épuisées, on
+  // laisse la main au bouton « Reprendre » existant (via OL.error).
+  function olReconnectingBanner() {
+    if (!OL.rc.active) return '';
+    return `<div class="dmsg bad" style="border-left:4px solid #c9a227">
+      ⏳ <b>Connexion interrompue — reconnexion automatique en cours…</b><br>
+      <small style="opacity:.8">La partie reste ouverte ; vous retrouverez votre place et l'état dès le retour du réseau.</small></div>`;
   }
   function viewOGame() {
     if (!OL.g) return `<div class="app"><div class="setup"><h1>20K <span>en ligne</span></h1><p class="dsub">Connexion…</p>
@@ -2899,6 +2984,7 @@ function olAskStats() {
       <div class="top"><button class="tool" data-a="oleave">← Quitter</button>
         <span class="rcode small"><b>#${esc(OL.code)}</b></span></div>
       <h1>20K <span>en ligne</span></h1>
+      ${olReconnectingBanner()}
       ${orderBanner}
       ${banner}
       ${g.winner !== null ? endBar : ''}
