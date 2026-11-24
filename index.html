@@ -289,6 +289,16 @@ h1 span{color:var(--muted);font-weight:600}
 .pastrow b{display:block;font-size:15px;color:var(--good)}
 .pastrow small{display:block;margin-top:2px;font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pastrow svg{flex:none;width:18px;height:18px;color:var(--muted)}
+/* Ligne joueur CLIQUABLE (stats détaillées) : reprend .prow mais devient un bouton plein. */
+.prow.clickable{width:100%;text-align:left;background:var(--surface);cursor:pointer;transition:transform .08s,filter .12s}
+.prow.clickable:hover{filter:brightness(1.04)}
+.prow.clickable:active{transform:scale(.985)}
+.prow.clickable .pinfo small b{white-space:nowrap}
+/* Bloc de grandes valeurs dans le détail d'un joueur. */
+.statgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
+.statgrid .stat{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;text-align:center}
+.statgrid .stat b{display:block;font-size:22px;color:var(--good)}
+.statgrid .stat small{color:var(--muted);font-size:12px}
 
 /* Journal des tours */
 .sheet{position:fixed;inset:0;z-index:20;background:var(--bg);display:flex;flex-direction:column;overscroll-behavior:contain}
@@ -891,7 +901,7 @@ h1 span{color:var(--muted);font-weight:600}
 
   const KEY = '20k-scorecard-v1';
   const KEY_DES = '20k-scorecard-v1-des';
-  const VERSION = '3.78';
+  const VERSION = '3.79';
 
   // dice-mode motors
   const D = window.DiceEngine;
@@ -1454,6 +1464,8 @@ h1 span{color:var(--muted);font-weight:600}
       case 'refreshstats': oDo('ostats'); break;
       case 'odetail': oDo('odetail', v); break;
       case 'ostatsback': oDo('ostatsback', v); break;
+      case 'oplayer': oDo('oplayer', v); break;
+      case 'oplayerback': oDo('oplayerback', v); break;
       case 'logtoggle': oDo('logtoggle'); break;
       case 'oinput': oDo('oinput', v); break;
       case 'osetp': oDo('osetp', v); break;
@@ -2232,6 +2244,7 @@ h1 span{color:var(--muted);font-weight:600}
     logAll: false,
     stats: { byName: {}, byId: {}, games: [] },
     parties: [], pendingReq: false, showCodeInput: false, pending: [], statsDetail: -1,
+    playerDetail: -1,   // index du joueur sélectionné dans roster.players pour ses stats détaillées
     // Reconnexion automatique d'une partie en cours : rc.{active, attempts, timer, code}.
     // active=true et screen resté sur ogame/host pendant que le socket revient.
     rc: { active: false, attempts: 0, timer: 0, code: '' }
@@ -2733,6 +2746,11 @@ function olAskStats() {
       case 'ostats': DS.screen = 'ostats'; OL.error = ''; olEnsureConn(); break;
       case 'odetail': OL.statsDetail = Number(v == null ? -1 : v); render(); break;   // détail lecture seule d'une partie
       case 'ostatsback': OL.statsDetail = -1; render(); break;
+      case 'oplayer': {   // stats détaillées d'UN joueur du répertoire (v = index dans roster.players)
+        const idx = Number(v == null ? -1 : v);
+        OL.playerDetail = (idx >= 0 && idx < (roster.players || []).length) ? idx : -1;
+        render(); break; }
+      case 'oplayerback': OL.playerDetail = -1; render(); break;
       case 'osetp': { const p = findPlayer(String(v)); olSetProfile(p); render(); break; }
       case 'obank': {  // le joueur actif encaisse depuis son tour local (normal ou vol)
         const t = OL.turnProxy;
@@ -2788,6 +2806,38 @@ function olAskStats() {
   }
   function viewOStats() {
     const games = (OL.stats && OL.stats.games) || [];
+    // --- Détail des stats d'UN joueur (clic sur son nom dans le répertoire) ---
+    if (OL.playerDetail >= 0 && roster.players && roster.players[OL.playerDetail]) {
+      const p = roster.players[OL.playerDetail];
+      const s = olPlayerStat(p) || { games: 0, wins: 0, points: 0 };
+      const pctW = s.games ? Math.round((s.wins / s.games) * 100) : 0;
+      const avg = s.games ? Math.round(s.points / s.games) : 0;
+      // Les parties TERMINÉES affichées où ce joueur est passé (par nom).
+      const mine = games.filter(g => (g.players || []).some(pp => String(pp.name).toLowerCase() === String(p.name).toLowerCase()));
+      const rowsDone = mine.length ? mine.map(g => {
+        const w = g.players[g.winner];
+        const wName = w ? w.name : '?';
+        const iam = g.players.find(pp => String(pp.name).toLowerCase() === String(p.name).toLowerCase());
+        const won = iam === g.players[g.winner];
+        const date = new Date(g.ts).toLocaleDateString('fr-CA', { day: 'numeric', month: 'short' });
+        const score = iam ? iam.score : 0;
+        return `<div class="prow"><span class="avat" style="background:${won ? '#c9a227' : p.color}">${esc((p.name[0] || '?').toUpperCase())}</span>
+          <div class="pinfo"><b>${esc(date)} · ${esc(wName)} gagne</b>
+          <small>${esc(p.name)} : ${fmt(score)} pts${won ? ' 🏆' : ' (défaite)'}</small></div></div>`;
+      }).join('') : '';
+      return `<div class="app"><div class="setup">
+        <div class="top"><button class="tool" data-a="oplayerback">← Retour</button></div>
+        <h1>20K <span>stats</span></h1>
+        <div class="prow"><span class="avat" style="background:${p.color}">${esc((p.name[0] || '?').toUpperCase())}</span>
+          <div class="pinfo"><b>${esc(p.name)}</b><small>${esc(p.color)}</small></div></div>
+        <div class="dmsg good">📊 <b>${esc(p.name)}</b> — ${s.games} partie${s.games===1?'':'s'} · ${s.wins} vi${s.wins===1?'ctoire':'ctoires'} · ${pctW}% de victoires</div>
+        <div class="statgrid"><div class="stat"><b>${fmt(s.points)}</b><small>points cumulés</small></div>
+          <div class="stat"><b>${avg}</b><small>moyenne/partie</small></div></div>
+        <h2>Parties récentes de ${esc(p.name)}</h2>
+        ${rowsDone || '<p class="dsub">Aucune partie récente affichée pour ce joueur.</p>'}
+        <button class="act slate" style="width:100%" data-a="oplayerback">← Retour aux statistiques</button>
+      </div></div>`;
+    }
     // Détail lecture seule d'une partie terminée (clic sur une ligne ci-dessous).
     if (OL.statsDetail >= 0 && games[OL.statsDetail]) {
       const g = games[OL.statsDetail];
@@ -2810,15 +2860,16 @@ function olAskStats() {
     }
     const bl = OL.stats && OL.stats.byName;
     const bi = OL.stats && OL.stats.byId;
-    const rows = (roster.players || []).map(p => {
+    const rows = (roster.players || []).map((p, idx) => {
       // Stats : privilégie byId quand il a des données, sinon byName (parties pré-pid).
       let s = olPlayerStat(p);
       s = s || { games: 0, wins: 0, points: 0 };
       const pctW = s.games ? Math.round((s.wins / s.games) * 100) : 0;
-      return `<div class="prow"><span class="avat" style="background:${p.color}">${esc((p.name[0] || '?').toUpperCase())}</span>
-        <div class="pinfo"><b>${esc(p.name)}</b>
-        <small>${s.games} partie${s.games===1?'':'s'} · ${s.wins} vi${s.wins===1?'ctoire':'ctoires'} · ${fmt(s.points)} pts · ${pctW}% vict.</small></div>
-        ${s.wins ? `<div class="pops"><span class="trophy">🏆</span></div>` : ''}</div>`;
+      return `<button class="prow clickable" data-a="oplayer" data-v="${idx}" aria-label="Voir les stats de ${esc(p.name)}">
+        <span class="avat" style="background:${p.color}">${esc((p.name[0] || '?').toUpperCase())}</span>
+        <span class="pinfo"><b>${esc(p.name)}</b>
+        <small>${s.games} partie${s.games===1?'':'s'} · ${s.wins} vi${s.wins===1?'ctoire':'ctoires'} · ${fmt(s.points)} pts · ${pctW}% vict. — détail</small></span>
+        ${s.wins ? `<span class="pops"><span class="trophy">🏆</span></span>` : ''}${ICON.chev}</button>`;
     }).join('');
     // Lignes cliquables -> détail lecture seule (on garde l'index d'origine dans games).
     const reg = games.map((g, idx) => {
